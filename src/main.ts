@@ -1,133 +1,312 @@
 import { Random } from "./utils/Random";
 
-let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
-let ctx = canvas.getContext("2d")!;
+const ctx = canvas.getContext("2d")!;
 
-let width = canvas.width / 2;
+const width = canvas.width / 2;
 
 let mousePressed = false;
 
+const cellSize = 32;
 
-class PaletteCell 
-{
-    static size = 50;
+class Color {
+    leftColor: string;
+    rightColor: string;
 
-    color: string
-    position: {x:number, y: number}
-
-    constructor(x: number, y: number, c: string) {
-        this.color = c;
-        this.position = {x, y};
+    constructor(left: string, right?: string) {
+        this.leftColor = left;
+        this.rightColor = right || left;
     }
 
-    isHover(mx: number, my: number) {
-        let isHoverSide = (side: number) => {
-            let x = this.position.x + (!side ? 0 : width);
-            return (mx >= x && mx <= x + PaletteCell.size
-                && my >= this.position.y && my <= this.position.y + PaletteCell.size);
+    equals(other: Color): boolean {
+        return (this.leftColor === other.leftColor && this.rightColor === other.rightColor
+            || this.leftColor === other.rightColor && this.rightColor === other.leftColor);
+    }
+
+    static colors = [
+        "yellow",
+        "red",
+        "blue",
+        "green",
+        "cyan",
+    ];
+
+    static getRandom(): Color {
+        const fixed = [
+            new Color("red"),
+            new Color("blue"),
+            new Color("green"),
+            new Color("yellow"),
+            new Color("green", "yellow"),
+            new Color("yellow", "green"),
+            new Color("blue", "yellow"),
+            new Color("yellow", "blue"),
+        ];
+
+        return fixed[Math.trunc(Math.random() * fixed.length)];
+
+        const left = randomColorString();
+        let right = randomColorString();
+        if (Math.trunc(Math.random() * 3) === 0) {
+            right = left;
         }
+        return new Color(left, right);
 
-        return isHoverSide(0) || isHoverSide(1);
+        function randomColorString() {
+            return Color.colors[Math.trunc(Math.random() * Color.colors.length)];
+        }
+    }
+}
+
+class Cell {
+    color: Color;
+
+    constructor(color: Color) {
+        this.color = color;
+    }
+}
+
+class CellCoords {
+    column: number;
+    row: number;
+
+    constructor(r: number, c: number) {
+        this.row = r;
+        this.column = c;
     }
 
-    draw(context: CanvasRenderingContext2D) {
-        context.fillStyle = this.color;
+    valid(b: Board) {
+        return this.row >= 0
+            && this.row < b.rows
+            && this.column >= 0
+            && this.column < b.columns;
+    }
+
+    copy() {
+        return new CellCoords(this.row, this.column);
+    }
+}
+
+class Chunk {
+    coords: CellCoords;
+    length: number;
+
+    constructor(coords: CellCoords, length: number) {
+        this.coords = coords;
+        this.length = length;
+    }
+}
+
+type CellU = Cell | undefined;
+
+class Board {
+
+    cells: CellU[][];
+    rows: number;
+    columns: number;
+
+    constructor(rows: number, columns: number) {
+        this.cells = new Array(rows);
+        for (let i = 0; i < rows; i++) {
+            this.cells[i] = new Array(columns);
+        }
+        this.rows = rows;
+        this.columns = columns;
+    }
+
+    randomize() {
+        for (let i = 0; i < this.rows; i++) {
+            for (let j = 0; j < this.columns; j++) {
+                this.cells[i][j] = new Cell(Color.getRandom());
+            }
+        }
+    }
+
+    findChunks(): number {
+        let counter = 0;
+        for (let i = 0; i < this.rows; i++) {
+            let startJ = 0;
+            for (let j = 1; j <= this.columns; j++) {
+                const prevCell = this.cells[i][j - 1] as Cell;
+                const cell = j === this.columns ? undefined : this.cells[i][j] as Cell;
+                if (!cell || !prevCell || !cell.color.equals(prevCell.color)) {
+                    const chunkLen = j - startJ;
+                    if (chunkLen > 2) {
+                        for (let jj = startJ; jj < startJ + chunkLen; jj++) {
+                            this.cells[i][jj] = undefined;
+                        }
+                        counter += 1;
+                    }
+                    startJ = j;
+                }
+            }
+        }
+        for (let j = 0; j < this.columns; j++) {
+            let startI = 0;
+            for (let i = 1; i <= this.rows; i++) {
+                const prevCell = this.cells[i - 1][j];
+                const cell = i === this.rows ? undefined : this.cells[i][j];
+                if (!cell || !prevCell || !cell.color.equals(prevCell.color)) {
+                    const chunkLen = i - startI;
+                    if (chunkLen > 2) {
+                        for (let ii = startI; ii < startI + chunkLen; ii++) {
+                            this.cells[ii][j] = undefined;
+                        }
+                        counter += 1;
+                    }
+                    startI = i;
+                }
+            }
+        }
+        return counter;
+    }
+
+    moveCell(coords: CellCoords, newCoords: CellCoords) {
+        if (newCoords.valid(this)) {
+            const tmp = this.cells[coords.row][coords.column];
+            this.cells[coords.row][coords.column] = this.cells[newCoords.row][newCoords.column];
+            this.cells[newCoords.row][newCoords.column] = tmp;
+        }
+    }
+
+    shake() {
+        let counter = 0;
+        for (let i = this.rows - 1; i >= 0; i--) {
+            for (let j = 0; j < this.columns; j++) {
+                if (i === 0 && !this.cells[i][j]) {
+                    this.cells[i][j] = new Cell(Color.getRandom());
+                    counter += 1;
+                    break;
+                }
+                if (!this.cells[i][j]) {
+                    this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
+                    if (i - 1 === 0 && !this.cells[i - 1][j]) {
+                        this.cells[i - 1][j] = new Cell(Color.getRandom());
+                    }
+                    counter += 1;
+                }
+            }
+        }
+        return counter;
+    }
+}
+
+function draw(context: CanvasRenderingContext2D, b: Board, viewSideRight: boolean) {
+    const ox = 0 + (viewSideRight ? width : 0);
+    const ocx = ox + width / 2;
+    const bWidth = cellSize * b.columns;
+    const bHeight = cellSize * b.rows;
+    const ocy = bHeight / 2;
+
+    const obx = ocx - bWidth / 2;
+    const oby = ocy - bHeight / 2;
+
+    context.strokeStyle = "black";
+    context.strokeRect(obx, oby, bWidth, bHeight);
+
+    for (let i = 0; i < b.rows; i++) {
+        for (let j = 0; j < b.columns; j++) {
+            const cell = b.cells[i][j];
+            drawCell(cell, i, j);
+        }
+    }
+
+    function drawCell(cell: Cell | undefined, i: number, j: number) {
         context.strokeStyle = "black";
-
-        drawSide(this, 0);
-        drawSide(this, 1);
-        
-        function drawSide(athis: PaletteCell, side: number) {
-            let x = athis.position.x + (!side ? 0 : width);
-            context.fillRect(x, athis.position.y, PaletteCell.size, PaletteCell.size); 
-            context.strokeRect(x, athis.position.y, PaletteCell.size, PaletteCell.size);
-        }
+        context.strokeRect(obx + j * cellSize, oby + i * cellSize, cellSize, cellSize);
+        context.fillStyle = !cell ? "black" : (viewSideRight ? cell.color.rightColor : cell.color.leftColor);
+        context.fillRect(obx + j * cellSize, oby + i * cellSize, cellSize, cellSize);
     }
 }
 
-const padding = 10;
+const board = new Board(10, 10);
+board.randomize();
 
-let colors = ["yellow", "red", "cyan", "lightgreen", "green", "lightsteelblue", "blue", "black", "white"];
-
-let cells = colors.map((c, i) => new PaletteCell(padding + i * (PaletteCell.size + 10), padding, c));
-
-for (let c of cells) {
-    c.draw(ctx);
+function refresh() {
+    draw(ctx, board, false);
+    draw(ctx, board, true);
 }
 
-let size = 10;
-let leftColor = 'green';
-let rightColor = leftColor;
+function shakeUntil() {
+    while (true) {
+        while (board.shake()) {
+            //
+        }
+        while (board.findChunks()) {
+            //
+        }
+        if (board.shake() === 0) { break; }
+    }
+}
 
-let lastX = 0;
-let lastY = 0;
+shakeUntil();
+refresh();
+
+let mdX = 0;
+let mdY = 0;
 canvas.addEventListener("mousedown", e => {
 
-    let x = e.offsetX;
-    let y = e.offsetY;
+    const x = e.offsetX;
+    const y = e.offsetY;
 
-    let cell = cells.find(c => c.isHover(x, y));
-    if (cell) {
-        if (e.button === 0) {
-            leftColor = cell.color;
-        }
-        return;
-    }
-
-    mousePressed = true;
-
-    drawLine(x, y, x + 1, y + 1);
-    lastX = x;
-    lastY = y;
+    mdX = x;
+    mdY = y;
 });
 
 canvas.addEventListener("mousemove", e => {
     if (mousePressed) {
-        let x = e.offsetX;
-        let y = e.offsetY;
-        drawLine(lastX, lastY, x, y);
-        lastX = x;
-        lastY = y;
+        //
     }
 });
 
+function findCellCoords(x: number, y: number): CellCoords | undefined {
+    const b = board;
+    const viewSideRight = false;
+    //
+    const ox = 0 + (viewSideRight ? width : 0);
+    const ocx = ox + width / 2;
+    const bWidth = cellSize * b.columns;
+    const bHeight = cellSize * b.rows;
+    const ocy = bHeight / 2;
+
+    const obx = ocx - bWidth / 2;
+    const oby = ocy - bHeight / 2;
+    if (x >= obx && x <= obx + bWidth && y >= oby && y <= oby + bHeight) {
+        x -= obx;
+        y -= oby;
+        const i = Math.trunc(y / cellSize);
+        const j = Math.trunc(x / cellSize);
+        return new CellCoords(i, j);
+    }
+    return undefined;
+}
+
 canvas.addEventListener("mouseup", e => {
-    let x = e.offsetX;
-    let y = e.offsetY;
-    let cell = cells.find(c => c.isHover(x, y));
-    if (cell) {
-        if (e.button === 0) {
-            rightColor = cell.color;
+    const x = e.offsetX;
+    const y = e.offsetY;
+
+    const mdCellCoords = findCellCoords(mdX, mdY);
+    const muCellCoords = findCellCoords(x, y);
+    if (mdCellCoords && muCellCoords) {
+        const dx = muCellCoords.column - mdCellCoords.column;
+        const dy = muCellCoords.row - mdCellCoords.row;
+        const newCoords = mdCellCoords.copy();
+        if (Math.abs(dx) > Math.abs(dy)) {
+            newCoords.column += Math.sign(dx);
+        } else {
+            newCoords.row += Math.sign(dy);
         }
-        return;
+        board.moveCell(mdCellCoords, newCoords);
+
+        if (!board.findChunks()) {
+            board.moveCell(newCoords, mdCellCoords);
+        } else {
+            shakeUntil();
+        }
+        refresh();
     }
 
     mousePressed = false;
-})
-
-canvas.addEventListener("wheel", e => {
-    size -= e.deltaY;
-    if (size < 1) size = 1;
-    else if (size > 50) size = 50;
 });
-
-function drawLine(x1: number, y1: number, x2: number, y2: number) {
-    _drawLine(x1 % width, y1, x2 % width, y2, leftColor);
-    _drawLine(x1 % width + width, y1, x2 % width + width, y2, rightColor);
-}
-
-function _drawLine(x1: number, y1: number, x2: number, y2: number, color: string) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.closePath();
-    ctx.stroke();
-}
-
-    
-

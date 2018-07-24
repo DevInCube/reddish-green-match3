@@ -26,18 +26,18 @@ System.register("utils/misc", [], function (exports_1, context_1) {
         }
     };
 });
-System.register("Color", ["utils/misc"], function (exports_2, context_2) {
+System.register("Bicolor", ["utils/misc"], function (exports_2, context_2) {
     var __moduleName = context_2 && context_2.id;
-    function colorEquals(color1, color2) {
-        return (color1.leftColor === color2.leftColor && color1.rightColor === color2.rightColor
-            || color1.leftColor === color2.rightColor && color1.rightColor === color2.leftColor);
+    function bicolorEquals(bicolor1, bicolor2) {
+        return (bicolor1.leftColor === bicolor2.leftColor && bicolor1.rightColor === bicolor2.rightColor
+            || bicolor1.leftColor === bicolor2.rightColor && bicolor1.rightColor === bicolor2.leftColor);
     }
-    exports_2("colorEquals", colorEquals);
-    function getRandomColor() {
-        return misc_1.getRandomElement(colors);
+    exports_2("bicolorEquals", bicolorEquals);
+    function getRandomBicolor() {
+        return misc_1.getRandomElement(bicolors);
     }
-    exports_2("getRandomColor", getRandomColor);
-    var misc_1, colors;
+    exports_2("getRandomBicolor", getRandomBicolor);
+    var misc_1, bicolors;
     return {
         setters: [
             function (misc_1_1) {
@@ -45,7 +45,7 @@ System.register("Color", ["utils/misc"], function (exports_2, context_2) {
             }
         ],
         execute: function () {
-            colors = [{
+            bicolors = [{
                     leftColor: "red",
                     rightColor: "red",
                 }, {
@@ -73,7 +73,7 @@ System.register("Color", ["utils/misc"], function (exports_2, context_2) {
         }
     };
 });
-System.register("main", ["Color"], function (exports_3, context_3) {
+System.register("main", ["Bicolor"], function (exports_3, context_3) {
     var __moduleName = context_3 && context_3.id;
     function draw(context, b, viewSideRight) {
         const ox = 0 + (viewSideRight ? width : 0);
@@ -135,11 +135,11 @@ System.register("main", ["Color"], function (exports_3, context_3) {
         }
         return undefined;
     }
-    var Color_1, canvas, ctx, width, mousePressed, cellSize, Cell, CellCoords, Chunk, Board, board, mdX, mdY;
+    var Bicolor_1, canvas, ctx, width, mousePressed, cellSize, Cell, CellCoords, Chunk, Board, board, mdX, mdY;
     return {
         setters: [
-            function (Color_1_1) {
-                Color_1 = Color_1_1;
+            function (Bicolor_1_1) {
+                Bicolor_1 = Bicolor_1_1;
             }
         ],
         execute: function () {
@@ -188,7 +188,7 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                 randomize() {
                     for (let i = 0; i < this.rows; i++) {
                         for (let j = 0; j < this.columns; j++) {
-                            this.cells[i][j] = new Cell(Color_1.getRandomColor());
+                            this.cells[i][j] = new Cell(Bicolor_1.getRandomBicolor());
                         }
                     }
                 }
@@ -199,7 +199,7 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                         for (let j = 1; j <= this.columns; j++) {
                             const prevCell = this.cells[i][j - 1];
                             const cell = j === this.columns ? undefined : this.cells[i][j];
-                            if (!cell || !prevCell || !Color_1.colorEquals(cell.color, prevCell.color)) {
+                            if (!cell || !prevCell || !Bicolor_1.bicolorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = j - startJ;
                                 if (chunkLen > 2) {
                                     for (let jj = startJ; jj < startJ + chunkLen; jj++) {
@@ -216,7 +216,7 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                         for (let i = 1; i <= this.rows; i++) {
                             const prevCell = this.cells[i - 1][j];
                             const cell = i === this.rows ? undefined : this.cells[i][j];
-                            if (!cell || !prevCell || !Color_1.colorEquals(cell.color, prevCell.color)) {
+                            if (!cell || !prevCell || !Bicolor_1.bicolorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = i - startI;
                                 if (chunkLen > 2) {
                                     for (let ii = startI; ii < startI + chunkLen; ii++) {
@@ -242,14 +242,14 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                     for (let i = this.rows - 1; i >= 0; i--) {
                         for (let j = 0; j < this.columns; j++) {
                             if (i === 0 && !this.cells[i][j]) {
-                                this.cells[i][j] = new Cell(Color_1.getRandomColor());
+                                this.cells[i][j] = new Cell(Bicolor_1.getRandomBicolor());
                                 counter += 1;
                                 break;
                             }
                             if (!this.cells[i][j]) {
                                 this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
                                 if (i - 1 === 0 && !this.cells[i - 1][j]) {
-                                    this.cells[i - 1][j] = new Cell(Color_1.getRandomColor());
+                                    this.cells[i - 1][j] = new Cell(Bicolor_1.getRandomBicolor());
                                 }
                                 counter += 1;
                             }

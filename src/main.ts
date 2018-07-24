@@ -1,4 +1,4 @@
-import { Color, getRandomColor, colorEquals } from "./Color";
+import { Bicolor, getRandomBicolor, bicolorEquals } from "./Bicolor";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -12,9 +12,9 @@ let mousePressed = false;
 const cellSize = 32;
 
 class Cell {
-    color: Color;
+    color: Bicolor;
 
-    constructor(color: Color) {
+    constructor(color: Bicolor) {
         this.color = color;
     }
 }
@@ -70,7 +70,7 @@ class Board {
     randomize() {
         for (let i = 0; i < this.rows; i++) {
             for (let j = 0; j < this.columns; j++) {
-                this.cells[i][j] = new Cell(getRandomColor());
+                this.cells[i][j] = new Cell(getRandomBicolor());
             }
         }
     }
@@ -82,7 +82,7 @@ class Board {
             for (let j = 1; j <= this.columns; j++) {
                 const prevCell = this.cells[i][j - 1] as Cell;
                 const cell = j === this.columns ? undefined : this.cells[i][j] as Cell;
-                if (!cell || !prevCell || !colorEquals(cell.color, prevCell.color)) {
+                if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
                     const chunkLen = j - startJ;
                     if (chunkLen > 2) {
                         for (let jj = startJ; jj < startJ + chunkLen; jj++) {
@@ -99,7 +99,7 @@ class Board {
             for (let i = 1; i <= this.rows; i++) {
                 const prevCell = this.cells[i - 1][j];
                 const cell = i === this.rows ? undefined : this.cells[i][j];
-                if (!cell || !prevCell || !colorEquals(cell.color, prevCell.color)) {
+                if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
                     const chunkLen = i - startI;
                     if (chunkLen > 2) {
                         for (let ii = startI; ii < startI + chunkLen; ii++) {
@@ -127,14 +127,14 @@ class Board {
         for (let i = this.rows - 1; i >= 0; i--) {
             for (let j = 0; j < this.columns; j++) {
                 if (i === 0 && !this.cells[i][j]) {
-                    this.cells[i][j] = new Cell(getRandomColor());
+                    this.cells[i][j] = new Cell(getRandomBicolor());
                     counter += 1;
                     break;
                 }
                 if (!this.cells[i][j]) {
                     this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
                     if (i - 1 === 0 && !this.cells[i - 1][j]) {
-                        this.cells[i - 1][j] = new Cell(getRandomColor());
+                        this.cells[i - 1][j] = new Cell(getRandomBicolor());
                     }
                     counter += 1;
                 }

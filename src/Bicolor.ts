@@ -1,16 +1,16 @@
 import { getRandomElement } from "./utils/misc";
 
-export interface Color {
+export interface Bicolor {
     leftColor: string;
     rightColor: string;
 }
 
-export function colorEquals(color1: Color, color2: Color) {
-    return (color1.leftColor === color2.leftColor && color1.rightColor === color2.rightColor
-        || color1.leftColor === color2.rightColor && color1.rightColor === color2.leftColor);
+export function bicolorEquals(bicolor1: Bicolor, bicolor2: Bicolor) {
+    return (bicolor1.leftColor === bicolor2.leftColor && bicolor1.rightColor === bicolor2.rightColor
+        || bicolor1.leftColor === bicolor2.rightColor && bicolor1.rightColor === bicolor2.leftColor);
 }
 
-const colors = [{
+const bicolors = [{
     leftColor: "red",
     rightColor: "red",
 }, {
@@ -36,6 +36,6 @@ const colors = [{
     rightColor: "blue",
 }];
 
-export function getRandomColor(): Color {
-    return getRandomElement(colors);
+export function getRandomBicolor(): Bicolor {
+    return getRandomElement(bicolors);
 }

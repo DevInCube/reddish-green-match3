@@ -268,16 +268,10 @@ System.register("main", ["generateBoard", "BoardController"], function (exports_
                     rightColor: "yellow",
                 }, {
                     leftColor: "green",
-                    rightColor: "yellow",
+                    rightColor: "red",
                 }, {
-                    leftColor: "yellow",
+                    leftColor: "red",
                     rightColor: "green",
-                }, {
-                    leftColor: "blue",
-                    rightColor: "yellow",
-                }, {
-                    leftColor: "yellow",
-                    rightColor: "blue",
                 }];
             board = new BoardController_1.BoardController(generateBoard_1.generateBoard(10, 10, bicolors));
             shakeUntil();

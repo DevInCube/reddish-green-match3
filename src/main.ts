@@ -55,16 +55,10 @@ const bicolors = [{
     rightColor: "yellow",
 }, {
     leftColor: "green",
-    rightColor: "yellow",
+    rightColor: "red",
 }, {
-    leftColor: "yellow",
+    leftColor: "red",
     rightColor: "green",
-}, {
-    leftColor: "blue",
-    rightColor: "yellow",
-}, {
-    leftColor: "yellow",
-    rightColor: "blue",
 }];
 const board = new BoardController(generateBoard(10, 10, bicolors));
 

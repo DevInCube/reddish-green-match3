@@ -1,7 +1,6 @@
-import { Bicolor, bicolorEquals } from "./Bicolor";
-import { BoardModel } from "./model";
+import { BoardModel, CellModel } from "./model";
 import { generateBoard } from "./generateBoard";
-import { getRandomElement } from "./utils/misc";
+import { BoardController, CellCoords } from "./BoardController";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
@@ -13,123 +12,6 @@ const width = canvas.width / 2;
 let mousePressed = false;
 
 const cellSize = 32;
-
-class Cell {
-    color: Bicolor;
-
-    constructor(color: Bicolor) {
-        this.color = color;
-    }
-}
-
-class CellCoords {
-    column: number;
-    row: number;
-
-    constructor(r: number, c: number) {
-        this.row = r;
-        this.column = c;
-    }
-
-    valid(b: BoardModel) {
-        return this.row >= 0
-            && this.row < b.rows
-            && this.column >= 0
-            && this.column < b.columns;
-    }
-
-    copy() {
-        return new CellCoords(this.row, this.column);
-    }
-}
-
-class Chunk {
-    coords: CellCoords;
-    length: number;
-
-    constructor(coords: CellCoords, length: number) {
-        this.coords = coords;
-        this.length = length;
-    }
-}
-
-type CellU = Cell | undefined;
-
-class BoardController {
-
-    constructor(
-        public model: BoardModel,
-    ) {
-    }
-
-    findChunks(): number {
-        let counter = 0;
-        for (let i = 0; i < this.model.rows; i++) {
-            let startJ = 0;
-            for (let j = 1; j <= this.model.columns; j++) {
-                const prevCell = this.model.cells[i][j - 1] as Cell;
-                const cell = j === this.model.columns ? undefined : this.model.cells[i][j] as Cell;
-                if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
-                    const chunkLen = j - startJ;
-                    if (chunkLen > 2) {
-                        for (let jj = startJ; jj < startJ + chunkLen; jj++) {
-                            this.model.cells[i][jj] = undefined;
-                        }
-                        counter += 1;
-                    }
-                    startJ = j;
-                }
-            }
-        }
-        for (let j = 0; j < this.model.columns; j++) {
-            let startI = 0;
-            for (let i = 1; i <= this.model.rows; i++) {
-                const prevCell = this.model.cells[i - 1][j];
-                const cell = i === this.model.rows ? undefined : this.model.cells[i][j];
-                if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
-                    const chunkLen = i - startI;
-                    if (chunkLen > 2) {
-                        for (let ii = startI; ii < startI + chunkLen; ii++) {
-                            this.model.cells[ii][j] = undefined;
-                        }
-                        counter += 1;
-                    }
-                    startI = i;
-                }
-            }
-        }
-        return counter;
-    }
-
-    moveCell(coords: CellCoords, newCoords: CellCoords) {
-        if (newCoords.valid(this.model)) {
-            const tmp = this.model.cells[coords.row][coords.column];
-            this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
-            this.model.cells[newCoords.row][newCoords.column] = tmp;
-        }
-    }
-
-    shake() {
-        let counter = 0;
-        for (let i = this.model.rows - 1; i >= 0; i--) {
-            for (let j = 0; j < this.model.columns; j++) {
-                if (i === 0 && !this.model.cells[i][j]) {
-                    this.model.cells[i][j] = new Cell(getRandomElement(this.model.bicolors));
-                    counter += 1;
-                    break;
-                }
-                if (!this.model.cells[i][j]) {
-                    this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
-                    if (i - 1 === 0 && !this.model.cells[i - 1][j]) {
-                        this.model.cells[i - 1][j] = new Cell(getRandomElement(this.model.bicolors));
-                    }
-                    counter += 1;
-                }
-            }
-        }
-        return counter;
-    }
-}
 
 function draw(context: CanvasRenderingContext2D, b: BoardModel, viewSideRight: boolean) {
     const ox = 0 + (viewSideRight ? width : 0);
@@ -151,7 +33,7 @@ function draw(context: CanvasRenderingContext2D, b: BoardModel, viewSideRight: b
         }
     }
 
-    function drawCell(cell: Cell | undefined, i: number, j: number) {
+    function drawCell(cell: CellModel | undefined, i: number, j: number) {
         context.strokeStyle = "black";
         context.strokeRect(obx + j * cellSize, oby + i * cellSize, cellSize, cellSize);
         context.fillStyle = !cell ? "black" : (viewSideRight ? cell.color.rightColor : cell.color.leftColor);

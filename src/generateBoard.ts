@@ -11,7 +11,7 @@ export function generateBoard(rows: number, columns: number, bicolors: Bicolor[]
             () => Array.from(
                 { length: rows },
                 () => ({
-                    color: getRandomElement(bicolors)
+                    color: getRandomElement(bicolors),
                 }))),
         bicolors,
     };

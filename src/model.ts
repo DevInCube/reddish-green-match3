@@ -5,8 +5,8 @@ export interface CellModel {
 }
 
 export interface BoardModel {
-    rows: number;
-    columns: number;
+    rowCount: number;
+    columnCount: number;
     cells: Array<Array<CellModel | undefined>>;
     bicolors: Bicolor[];
 }

@@ -15,17 +15,6 @@ export class CellCoords {
         this.row = r;
         this.column = c;
     }
-
-    valid(b: BoardModel) {
-        return this.row >= 0
-            && this.row < b.rows
-            && this.column >= 0
-            && this.column < b.columns;
-    }
-
-    copy() {
-        return new CellCoords(this.row, this.column);
-    }
 }
 
 export class BoardController {
@@ -37,11 +26,11 @@ export class BoardController {
 
     findChunks(): number {
         let counter = 0;
-        for (let i = 0; i < this.model.rows; i++) {
+        for (let i = 0; i < this.model.rowCount; i++) {
             let startJ = 0;
-            for (let j = 1; j <= this.model.columns; j++) {
+            for (let j = 1; j <= this.model.columnCount; j++) {
                 const prevCell = this.model.cells[i][j - 1] as CellModel;
-                const cell = j === this.model.columns ? undefined : this.model.cells[i][j] as CellModel;
+                const cell = j === this.model.columnCount ? undefined : this.model.cells[i][j] as CellModel;
                 if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
                     const chunkLen = j - startJ;
                     if (chunkLen > 2) {
@@ -54,11 +43,11 @@ export class BoardController {
                 }
             }
         }
-        for (let j = 0; j < this.model.columns; j++) {
+        for (let j = 0; j < this.model.columnCount; j++) {
             let startI = 0;
-            for (let i = 1; i <= this.model.rows; i++) {
+            for (let i = 1; i <= this.model.rowCount; i++) {
                 const prevCell = this.model.cells[i - 1][j];
-                const cell = i === this.model.rows ? undefined : this.model.cells[i][j];
+                const cell = i === this.model.rowCount ? undefined : this.model.cells[i][j];
                 if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
                     const chunkLen = i - startI;
                     if (chunkLen > 2) {
@@ -74,8 +63,15 @@ export class BoardController {
         return counter;
     }
 
+    areCoordsValid(c: CellCoords) {
+        return c.row >= 0
+            && c.row < this.model.rowCount
+            && c.column >= 0
+            && c.column < this.model.columnCount;
+    }
+
     moveCell(coords: CellCoords, newCoords: CellCoords) {
-        if (newCoords.valid(this.model)) {
+        if (this.areCoordsValid(newCoords)) {
             const tmp = this.model.cells[coords.row][coords.column];
             this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
             this.model.cells[newCoords.row][newCoords.column] = tmp;
@@ -84,8 +80,8 @@ export class BoardController {
 
     shake() {
         let counter = 0;
-        for (let i = this.model.rows - 1; i >= 0; i--) {
-            for (let j = 0; j < this.model.columns; j++) {
+        for (let i = this.model.rowCount - 1; i >= 0; i--) {
+            for (let j = 0; j < this.model.columnCount; j++) {
                 if (i === 0 && !this.model.cells[i][j]) {
                     this.model.cells[i][j] = {
                         color: getRandomElement(this.model.bicolors),

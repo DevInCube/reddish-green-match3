@@ -2,14 +2,14 @@ import { getRandomElement } from "./utils/misc";
 import { BoardModel } from "./model";
 import { Bicolor } from "./Bicolor";
 
-export function generateBoard(rows: number, columns: number, bicolors: Bicolor[]): BoardModel {
+export function generateBoard(rowCount: number, columnCount: number, bicolors: Bicolor[]): BoardModel {
     return {
-        rows,
-        columns,
+        rowCount,
+        columnCount,
         cells: Array.from(
-            { length: columns },
+            { length: columnCount },
             () => Array.from(
-                { length: rows },
+                { length: rowCount },
                 () => ({
                     color: getRandomElement(bicolors),
                 }))),

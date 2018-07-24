@@ -61,15 +61,6 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
                     this.row = r;
                     this.column = c;
                 }
-                valid(b) {
-                    return this.row >= 0
-                        && this.row < b.rows
-                        && this.column >= 0
-                        && this.column < b.columns;
-                }
-                copy() {
-                    return new CellCoords(this.row, this.column);
-                }
             };
             exports_4("CellCoords", CellCoords);
             BoardController = class BoardController {
@@ -78,11 +69,11 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
                 }
                 findChunks() {
                     let counter = 0;
-                    for (let i = 0; i < this.model.rows; i++) {
+                    for (let i = 0; i < this.model.rowCount; i++) {
                         let startJ = 0;
-                        for (let j = 1; j <= this.model.columns; j++) {
+                        for (let j = 1; j <= this.model.columnCount; j++) {
                             const prevCell = this.model.cells[i][j - 1];
-                            const cell = j === this.model.columns ? undefined : this.model.cells[i][j];
+                            const cell = j === this.model.columnCount ? undefined : this.model.cells[i][j];
                             if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = j - startJ;
                                 if (chunkLen > 2) {
@@ -95,11 +86,11 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
                             }
                         }
                     }
-                    for (let j = 0; j < this.model.columns; j++) {
+                    for (let j = 0; j < this.model.columnCount; j++) {
                         let startI = 0;
-                        for (let i = 1; i <= this.model.rows; i++) {
+                        for (let i = 1; i <= this.model.rowCount; i++) {
                             const prevCell = this.model.cells[i - 1][j];
-                            const cell = i === this.model.rows ? undefined : this.model.cells[i][j];
+                            const cell = i === this.model.rowCount ? undefined : this.model.cells[i][j];
                             if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = i - startI;
                                 if (chunkLen > 2) {
@@ -114,8 +105,14 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
                     }
                     return counter;
                 }
+                areCoordsValid(c) {
+                    return c.row >= 0
+                        && c.row < this.model.rowCount
+                        && c.column >= 0
+                        && c.column < this.model.columnCount;
+                }
                 moveCell(coords, newCoords) {
-                    if (newCoords.valid(this.model)) {
+                    if (this.areCoordsValid(newCoords)) {
                         const tmp = this.model.cells[coords.row][coords.column];
                         this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
                         this.model.cells[newCoords.row][newCoords.column] = tmp;
@@ -123,8 +120,8 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
                 }
                 shake() {
                     let counter = 0;
-                    for (let i = this.model.rows - 1; i >= 0; i--) {
-                        for (let j = 0; j < this.model.columns; j++) {
+                    for (let i = this.model.rowCount - 1; i >= 0; i--) {
+                        for (let j = 0; j < this.model.columnCount; j++) {
                             if (i === 0 && !this.model.cells[i][j]) {
                                 this.model.cells[i][j] = {
                                     color: misc_1.getRandomElement(this.model.bicolors),
@@ -150,19 +147,70 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
         }
     };
 });
-System.register("generateBoard", ["utils/misc"], function (exports_5, context_5) {
+System.register("BoardView", ["BoardController"], function (exports_5, context_5) {
     var __moduleName = context_5 && context_5.id;
-    function generateBoard(rows, columns, bicolors) {
+    var BoardController_1, BoardView;
+    return {
+        setters: [
+            function (BoardController_1_1) {
+                BoardController_1 = BoardController_1_1;
+            }
+        ],
+        execute: function () {
+            BoardView = class BoardView {
+                constructor(context, isRight, x, y, model) {
+                    this.context = context;
+                    this.isRight = isRight;
+                    this.x = x;
+                    this.y = y;
+                    this.model = model;
+                }
+                renderCell(cell, i, j) {
+                    this.context.strokeStyle = "black";
+                    this.context.strokeRect(this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE, BoardView.CELL_SIZE, BoardView.CELL_SIZE);
+                    this.context.fillStyle = !cell ? "black" : (this.isRight ? cell.color.rightColor : cell.color.leftColor);
+                    this.context.fillRect(this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE, BoardView.CELL_SIZE, BoardView.CELL_SIZE);
+                }
+                render() {
+                    this.context.strokeStyle = "black";
+                    this.context.strokeRect(this.x, this.y, BoardView.CELL_SIZE * this.model.columnCount, BoardView.CELL_SIZE * this.model.rowCount);
+                    for (let i = 0; i < this.model.rowCount; i++) {
+                        for (let j = 0; j < this.model.columnCount; j++) {
+                            const cell = this.model.cells[i][j];
+                            this.renderCell(cell, i, j);
+                        }
+                    }
+                }
+                findCellCoords(x, y) {
+                    if (x >= this.x && x <= this.x + BoardView.CELL_SIZE * this.model.columnCount
+                        && y >= this.y && y <= this.y + BoardView.CELL_SIZE * this.model.rowCount) {
+                        x -= this.x;
+                        y -= this.y;
+                        const i = Math.trunc(y / BoardView.CELL_SIZE);
+                        const j = Math.trunc(x / BoardView.CELL_SIZE);
+                        return new BoardController_1.CellCoords(i, j);
+                    }
+                    return undefined;
+                }
+            };
+            BoardView.CELL_SIZE = 32;
+            exports_5("BoardView", BoardView);
+        }
+    };
+});
+System.register("generateBoard", ["utils/misc"], function (exports_6, context_6) {
+    var __moduleName = context_6 && context_6.id;
+    function generateBoard(rowCount, columnCount, bicolors) {
         return {
-            rows,
-            columns,
-            cells: Array.from({ length: columns }, () => Array.from({ length: rows }, () => ({
+            rowCount,
+            columnCount,
+            cells: Array.from({ length: columnCount }, () => Array.from({ length: rowCount }, () => ({
                 color: misc_2.getRandomElement(bicolors),
             }))),
             bicolors,
         };
     }
-    exports_5("generateBoard", generateBoard);
+    exports_6("generateBoard", generateBoard);
     var misc_2;
     return {
         setters: [
@@ -174,76 +222,36 @@ System.register("generateBoard", ["utils/misc"], function (exports_5, context_5)
         }
     };
 });
-System.register("main", ["generateBoard", "BoardController"], function (exports_6, context_6) {
-    var __moduleName = context_6 && context_6.id;
-    function draw(context, b, viewSideRight) {
-        const ox = 0 + (viewSideRight ? width : 0);
-        const ocx = ox + width / 2;
-        const bWidth = cellSize * b.columns;
-        const bHeight = cellSize * b.rows;
-        const ocy = bHeight / 2;
-        const obx = ocx - bWidth / 2;
-        const oby = ocy - bHeight / 2;
-        context.strokeStyle = "black";
-        context.strokeRect(obx, oby, bWidth, bHeight);
-        for (let i = 0; i < b.rows; i++) {
-            for (let j = 0; j < b.columns; j++) {
-                const cell = b.cells[i][j];
-                drawCell(cell, i, j);
-            }
-        }
-        function drawCell(cell, i, j) {
-            context.strokeStyle = "black";
-            context.strokeRect(obx + j * cellSize, oby + i * cellSize, cellSize, cellSize);
-            context.fillStyle = !cell ? "black" : (viewSideRight ? cell.color.rightColor : cell.color.leftColor);
-            context.fillRect(obx + j * cellSize, oby + i * cellSize, cellSize, cellSize);
-        }
-    }
-    function refresh() {
-        draw(ctx, board.model, false);
-        draw(ctx, board.model, true);
+System.register("main", ["generateBoard", "BoardController", "BoardView"], function (exports_7, context_7) {
+    var __moduleName = context_7 && context_7.id;
+    function render() {
+        leftBoardView.render();
+        rightBoardView.render();
     }
     function shakeUntil() {
         while (true) {
-            while (board.shake()) {
+            while (boardController.shake()) {
                 //
             }
-            while (board.findChunks()) {
+            while (boardController.findChunks()) {
                 //
             }
-            if (board.shake() === 0) {
+            if (boardController.shake() === 0) {
                 break;
             }
         }
     }
-    function findCellCoords(x, y) {
-        const b = board;
-        const viewSideRight = false;
-        //
-        const ox = 0 + (viewSideRight ? width : 0);
-        const ocx = ox + width / 2;
-        const bWidth = cellSize * b.model.columns;
-        const bHeight = cellSize * b.model.rows;
-        const ocy = bHeight / 2;
-        const obx = ocx - bWidth / 2;
-        const oby = ocy - bHeight / 2;
-        if (x >= obx && x <= obx + bWidth && y >= oby && y <= oby + bHeight) {
-            x -= obx;
-            y -= oby;
-            const i = Math.trunc(y / cellSize);
-            const j = Math.trunc(x / cellSize);
-            return new BoardController_1.CellCoords(i, j);
-        }
-        return undefined;
-    }
-    var generateBoard_1, BoardController_1, canvas, ctx, width, mousePressed, cellSize, bicolors, board, mdX, mdY;
+    var generateBoard_1, BoardController_2, BoardView_1, canvas, ctx, width, mousePressed, bicolors, boardController, leftBoardView, rightBoardView, mdX, mdY;
     return {
         setters: [
             function (generateBoard_1_1) {
                 generateBoard_1 = generateBoard_1_1;
             },
-            function (BoardController_1_1) {
-                BoardController_1 = BoardController_1_1;
+            function (BoardController_2_1) {
+                BoardController_2 = BoardController_2_1;
+            },
+            function (BoardView_1_1) {
+                BoardView_1 = BoardView_1_1;
             }
         ],
         execute: function () {
@@ -253,7 +261,6 @@ System.register("main", ["generateBoard", "BoardController"], function (exports_
             ctx = canvas.getContext("2d");
             width = canvas.width / 2;
             mousePressed = false;
-            cellSize = 32;
             bicolors = [{
                     leftColor: "red",
                     rightColor: "red",
@@ -273,9 +280,11 @@ System.register("main", ["generateBoard", "BoardController"], function (exports_
                     leftColor: "red",
                     rightColor: "green",
                 }];
-            board = new BoardController_1.BoardController(generateBoard_1.generateBoard(10, 10, bicolors));
+            boardController = new BoardController_2.BoardController(generateBoard_1.generateBoard(10, 10, bicolors));
+            leftBoardView = new BoardView_1.BoardView(ctx, false, 0, 0, boardController.model);
+            rightBoardView = new BoardView_1.BoardView(ctx, true, width, 0, boardController.model);
             shakeUntil();
-            refresh();
+            render();
             mdX = 0;
             mdY = 0;
             canvas.addEventListener("mousedown", e => {
@@ -292,34 +301,34 @@ System.register("main", ["generateBoard", "BoardController"], function (exports_
             canvas.addEventListener("mouseup", e => {
                 const x = e.offsetX;
                 const y = e.offsetY;
-                const mdCellCoords = findCellCoords(mdX, mdY);
-                const muCellCoords = findCellCoords(x, y);
+                const mdCellCoords = leftBoardView.findCellCoords(mdX, mdY) || rightBoardView.findCellCoords(mdX, mdY);
+                const muCellCoords = leftBoardView.findCellCoords(x, y) || rightBoardView.findCellCoords(x, y);
                 if (mdCellCoords && muCellCoords) {
                     const dx = muCellCoords.column - mdCellCoords.column;
                     const dy = muCellCoords.row - mdCellCoords.row;
-                    const newCoords = mdCellCoords.copy();
+                    const newCoords = new BoardController_2.CellCoords(mdCellCoords.row, mdCellCoords.column);
                     if (Math.abs(dx) > Math.abs(dy)) {
                         newCoords.column += Math.sign(dx);
                     }
                     else {
                         newCoords.row += Math.sign(dy);
                     }
-                    board.moveCell(mdCellCoords, newCoords);
-                    if (!board.findChunks()) {
-                        board.moveCell(newCoords, mdCellCoords);
+                    boardController.moveCell(mdCellCoords, newCoords);
+                    if (!boardController.findChunks()) {
+                        boardController.moveCell(newCoords, mdCellCoords);
                     }
                     else {
                         shakeUntil();
                     }
-                    refresh();
+                    render();
                 }
                 mousePressed = false;
             });
         }
     };
 });
-System.register("utils/imageData", [], function (exports_7, context_7) {
-    var __moduleName = context_7 && context_7.id;
+System.register("utils/imageData", [], function (exports_8, context_8) {
+    var __moduleName = context_8 && context_8.id;
     function setPixelI(imageData, i, r, g, b, a = 1) {
         // tslint:disable-next-line:no-bitwise
         const offset = i << 2;
@@ -328,22 +337,22 @@ System.register("utils/imageData", [], function (exports_7, context_7) {
         imageData.data[offset + 2] = b;
         imageData.data[offset + 3] = a;
     }
-    exports_7("setPixelI", setPixelI);
+    exports_8("setPixelI", setPixelI);
     function scaleNorm(v) {
         return Math.floor(v * almost256);
     }
     function setPixelNormI(imageData, i, r, g, b, a = 1) {
         setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
     }
-    exports_7("setPixelNormI", setPixelNormI);
+    exports_8("setPixelNormI", setPixelNormI);
     function setPixelXY(imageData, x, y, r, g, b, a = 255) {
         setPixelI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_7("setPixelXY", setPixelXY);
+    exports_8("setPixelXY", setPixelXY);
     function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
         setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_7("setPixelNormXY", setPixelNormXY);
+    exports_8("setPixelNormXY", setPixelNormXY);
     var almost256;
     return {
         setters: [],
@@ -353,8 +362,8 @@ System.register("utils/imageData", [], function (exports_7, context_7) {
     };
 });
 // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_8, context_8) {
-    var __moduleName = context_8 && context_8.id;
+System.register("utils/Random", [], function (exports_9, context_9) {
+    var __moduleName = context_9 && context_9.id;
     var MAX_INT32, MINSTD, Random;
     return {
         setters: [],
@@ -378,7 +387,7 @@ System.register("utils/Random", [], function (exports_8, context_8) {
                     return (this.next() - 1) / (MAX_INT32 - 1);
                 }
             };
-            exports_8("Random", Random);
+            exports_9("Random", Random);
         }
     };
 });

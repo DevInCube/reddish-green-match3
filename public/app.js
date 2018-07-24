@@ -1,7 +1,56 @@
-// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_1, context_1) {
-    var MAX_INT32, MINSTD, Random;
+System.register("Color", [], function (exports_1, context_1) {
     var __moduleName = context_1 && context_1.id;
+    var Color;
+    return {
+        setters: [],
+        execute: function () {
+            Color = class Color {
+                constructor(left, right) {
+                    this.leftColor = left;
+                    this.rightColor = right || left;
+                }
+                equals(other) {
+                    return (this.leftColor === other.leftColor && this.rightColor === other.rightColor
+                        || this.leftColor === other.rightColor && this.rightColor === other.leftColor);
+                }
+                static getRandom() {
+                    const fixed = [
+                        new Color("red"),
+                        new Color("blue"),
+                        new Color("green"),
+                        new Color("yellow"),
+                        new Color("green", "yellow"),
+                        new Color("yellow", "green"),
+                        new Color("blue", "yellow"),
+                        new Color("yellow", "blue"),
+                    ];
+                    return fixed[Math.trunc(Math.random() * fixed.length)];
+                    const left = randomColorString();
+                    let right = randomColorString();
+                    if (Math.trunc(Math.random() * 3) === 0) {
+                        right = left;
+                    }
+                    return new Color(left, right);
+                    function randomColorString() {
+                        return Color.colors[Math.trunc(Math.random() * Color.colors.length)];
+                    }
+                }
+            };
+            Color.colors = [
+                "yellow",
+                "red",
+                "blue",
+                "green",
+                "cyan",
+            ];
+            exports_1("Color", Color);
+        }
+    };
+});
+// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+System.register("utils/Random", [], function (exports_2, context_2) {
+    var __moduleName = context_2 && context_2.id;
+    var MAX_INT32, MINSTD, Random;
     return {
         setters: [],
         execute: function () {// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
@@ -24,13 +73,12 @@ System.register("utils/Random", [], function (exports_1, context_1) {
                     return (this.next() - 1) / (MAX_INT32 - 1);
                 }
             };
-            exports_1("Random", Random);
+            exports_2("Random", Random);
         }
     };
 });
-System.register("main", [], function (exports_2, context_2) {
-    var canvas, ctx, width, mousePressed, cellSize, Color, Cell, CellCoords, Chunk, Board, board, mdX, mdY;
-    var __moduleName = context_2 && context_2.id;
+System.register("main", ["Color"], function (exports_3, context_3) {
+    var __moduleName = context_3 && context_3.id;
     function draw(context, b, viewSideRight) {
         const ox = 0 + (viewSideRight ? width : 0);
         const ocx = ox + width / 2;
@@ -91,8 +139,13 @@ System.register("main", [], function (exports_2, context_2) {
         }
         return undefined;
     }
+    var Color_1, canvas, ctx, width, mousePressed, cellSize, Cell, CellCoords, Chunk, Board, board, mdX, mdY;
     return {
-        setters: [],
+        setters: [
+            function (Color_1_1) {
+                Color_1 = Color_1_1;
+            }
+        ],
         execute: function () {
             canvas = document.getElementById("canvas");
             canvas.width = canvas.clientWidth;
@@ -101,45 +154,6 @@ System.register("main", [], function (exports_2, context_2) {
             width = canvas.width / 2;
             mousePressed = false;
             cellSize = 32;
-            Color = class Color {
-                constructor(left, right) {
-                    this.leftColor = left;
-                    this.rightColor = right || left;
-                }
-                equals(other) {
-                    return (this.leftColor === other.leftColor && this.rightColor === other.rightColor
-                        || this.leftColor === other.rightColor && this.rightColor === other.leftColor);
-                }
-                static getRandom() {
-                    const fixed = [
-                        new Color("red"),
-                        new Color("blue"),
-                        new Color("green"),
-                        new Color("yellow"),
-                        new Color("green", "yellow"),
-                        new Color("yellow", "green"),
-                        new Color("blue", "yellow"),
-                        new Color("yellow", "blue"),
-                    ];
-                    return fixed[Math.trunc(Math.random() * fixed.length)];
-                    const left = randomColorString();
-                    let right = randomColorString();
-                    if (Math.trunc(Math.random() * 3) === 0) {
-                        right = left;
-                    }
-                    return new Color(left, right);
-                    function randomColorString() {
-                        return Color.colors[Math.trunc(Math.random() * Color.colors.length)];
-                    }
-                }
-            };
-            Color.colors = [
-                "yellow",
-                "red",
-                "blue",
-                "green",
-                "cyan",
-            ];
             Cell = class Cell {
                 constructor(color) {
                     this.color = color;
@@ -178,7 +192,7 @@ System.register("main", [], function (exports_2, context_2) {
                 randomize() {
                     for (let i = 0; i < this.rows; i++) {
                         for (let j = 0; j < this.columns; j++) {
-                            this.cells[i][j] = new Cell(Color.getRandom());
+                            this.cells[i][j] = new Cell(Color_1.Color.getRandom());
                         }
                     }
                 }
@@ -232,14 +246,14 @@ System.register("main", [], function (exports_2, context_2) {
                     for (let i = this.rows - 1; i >= 0; i--) {
                         for (let j = 0; j < this.columns; j++) {
                             if (i === 0 && !this.cells[i][j]) {
-                                this.cells[i][j] = new Cell(Color.getRandom());
+                                this.cells[i][j] = new Cell(Color_1.Color.getRandom());
                                 counter += 1;
                                 break;
                             }
                             if (!this.cells[i][j]) {
                                 this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
                                 if (i - 1 === 0 && !this.cells[i - 1][j]) {
-                                    this.cells[i - 1][j] = new Cell(Color.getRandom());
+                                    this.cells[i - 1][j] = new Cell(Color_1.Color.getRandom());
                                 }
                                 counter += 1;
                             }
@@ -294,9 +308,8 @@ System.register("main", [], function (exports_2, context_2) {
         }
     };
 });
-System.register("utils/imageData", [], function (exports_3, context_3) {
-    var almost256;
-    var __moduleName = context_3 && context_3.id;
+System.register("utils/imageData", [], function (exports_4, context_4) {
+    var __moduleName = context_4 && context_4.id;
     function setPixelI(imageData, i, r, g, b, a = 1) {
         // tslint:disable-next-line:no-bitwise
         const offset = i << 2;
@@ -305,22 +318,23 @@ System.register("utils/imageData", [], function (exports_3, context_3) {
         imageData.data[offset + 2] = b;
         imageData.data[offset + 3] = a;
     }
-    exports_3("setPixelI", setPixelI);
+    exports_4("setPixelI", setPixelI);
     function scaleNorm(v) {
         return Math.floor(v * almost256);
     }
     function setPixelNormI(imageData, i, r, g, b, a = 1) {
         setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
     }
-    exports_3("setPixelNormI", setPixelNormI);
+    exports_4("setPixelNormI", setPixelNormI);
     function setPixelXY(imageData, x, y, r, g, b, a = 255) {
         setPixelI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_3("setPixelXY", setPixelXY);
+    exports_4("setPixelXY", setPixelXY);
     function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
         setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_3("setPixelNormXY", setPixelNormXY);
+    exports_4("setPixelNormXY", setPixelNormXY);
+    var almost256;
     return {
         setters: [],
         execute: function () {
@@ -328,8 +342,8 @@ System.register("utils/imageData", [], function (exports_3, context_3) {
         }
     };
 });
-System.register("utils/misc", [], function (exports_4, context_4) {
-    var __moduleName = context_4 && context_4.id;
+System.register("utils/misc", [], function (exports_5, context_5) {
+    var __moduleName = context_5 && context_5.id;
     function isVisible(elt) {
         const style = window.getComputedStyle(elt);
         return (style.width !== null && +style.width !== 0)
@@ -338,18 +352,18 @@ System.register("utils/misc", [], function (exports_4, context_4) {
             && style.display !== "none"
             && style.visibility !== "hidden";
     }
-    exports_4("isVisible", isVisible);
+    exports_5("isVisible", isVisible);
     function adjust(x, ...applyAdjustmentList) {
         for (const applyAdjustment of applyAdjustmentList) {
             applyAdjustment(x);
         }
         return x;
     }
-    exports_4("adjust", adjust);
+    exports_5("adjust", adjust);
     function getRandomElement(array) {
         return array[Math.floor(Math.random() * array.length)];
     }
-    exports_4("getRandomElement", getRandomElement);
+    exports_5("getRandomElement", getRandomElement);
     return {
         setters: [],
         execute: function () {

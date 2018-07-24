@@ -15,11 +15,23 @@ const bicolors = [{
     leftColor: "red",
     rightColor: "red",
 }, {
+    leftColor: "red",
+    rightColor: "red",
+}, {
+    leftColor: "blue",
+    rightColor: "blue",
+}, {
     leftColor: "blue",
     rightColor: "blue",
 }, {
     leftColor: "green",
     rightColor: "green",
+}, {
+    leftColor: "green",
+    rightColor: "green",
+}, {
+    leftColor: "yellow",
+    rightColor: "yellow",
 }, {
     leftColor: "yellow",
     rightColor: "yellow",

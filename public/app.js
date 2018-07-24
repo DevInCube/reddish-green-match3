@@ -26,18 +26,41 @@ System.register("utils/misc", [], function (exports_1, context_1) {
         }
     };
 });
-System.register("Bicolor", ["utils/misc"], function (exports_2, context_2) {
+System.register("Bicolor", [], function (exports_2, context_2) {
     var __moduleName = context_2 && context_2.id;
     function bicolorEquals(bicolor1, bicolor2) {
         return (bicolor1.leftColor === bicolor2.leftColor && bicolor1.rightColor === bicolor2.rightColor
             || bicolor1.leftColor === bicolor2.rightColor && bicolor1.rightColor === bicolor2.leftColor);
     }
     exports_2("bicolorEquals", bicolorEquals);
-    function getRandomBicolor() {
-        return misc_1.getRandomElement(bicolors);
+    return {
+        setters: [],
+        execute: function () {
+        }
+    };
+});
+System.register("model", [], function (exports_3, context_3) {
+    var __moduleName = context_3 && context_3.id;
+    return {
+        setters: [],
+        execute: function () {
+        }
+    };
+});
+System.register("generateBoard", ["utils/misc"], function (exports_4, context_4) {
+    var __moduleName = context_4 && context_4.id;
+    function generateBoard(rows, columns, bicolors) {
+        return {
+            rows,
+            columns,
+            cells: Array.from({ length: columns }, () => Array.from({ length: rows }, () => ({
+                color: misc_1.getRandomElement(bicolors)
+            }))),
+            bicolors,
+        };
     }
-    exports_2("getRandomBicolor", getRandomBicolor);
-    var misc_1, bicolors;
+    exports_4("generateBoard", generateBoard);
+    var misc_1;
     return {
         setters: [
             function (misc_1_1) {
@@ -45,36 +68,11 @@ System.register("Bicolor", ["utils/misc"], function (exports_2, context_2) {
             }
         ],
         execute: function () {
-            bicolors = [{
-                    leftColor: "red",
-                    rightColor: "red",
-                }, {
-                    leftColor: "blue",
-                    rightColor: "blue",
-                }, {
-                    leftColor: "green",
-                    rightColor: "green",
-                }, {
-                    leftColor: "yellow",
-                    rightColor: "yellow",
-                }, {
-                    leftColor: "green",
-                    rightColor: "yellow",
-                }, {
-                    leftColor: "yellow",
-                    rightColor: "green",
-                }, {
-                    leftColor: "blue",
-                    rightColor: "yellow",
-                }, {
-                    leftColor: "yellow",
-                    rightColor: "blue",
-                }];
         }
     };
 });
-System.register("main", ["Bicolor"], function (exports_3, context_3) {
-    var __moduleName = context_3 && context_3.id;
+System.register("main", ["Bicolor", "generateBoard", "utils/misc"], function (exports_5, context_5) {
+    var __moduleName = context_5 && context_5.id;
     function draw(context, b, viewSideRight) {
         const ox = 0 + (viewSideRight ? width : 0);
         const ocx = ox + width / 2;
@@ -99,8 +97,8 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
         }
     }
     function refresh() {
-        draw(ctx, board, false);
-        draw(ctx, board, true);
+        draw(ctx, board.model, false);
+        draw(ctx, board.model, true);
     }
     function shakeUntil() {
         while (true) {
@@ -121,8 +119,8 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
         //
         const ox = 0 + (viewSideRight ? width : 0);
         const ocx = ox + width / 2;
-        const bWidth = cellSize * b.columns;
-        const bHeight = cellSize * b.rows;
+        const bWidth = cellSize * b.model.columns;
+        const bHeight = cellSize * b.model.rows;
         const ocy = bHeight / 2;
         const obx = ocx - bWidth / 2;
         const oby = ocy - bHeight / 2;
@@ -135,11 +133,17 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
         }
         return undefined;
     }
-    var Bicolor_1, canvas, ctx, width, mousePressed, cellSize, Cell, CellCoords, Chunk, Board, board, mdX, mdY;
+    var Bicolor_1, generateBoard_1, misc_2, canvas, ctx, width, mousePressed, cellSize, Cell, CellCoords, Chunk, BoardController, bicolors, board, mdX, mdY;
     return {
         setters: [
             function (Bicolor_1_1) {
                 Bicolor_1 = Bicolor_1_1;
+            },
+            function (generateBoard_1_1) {
+                generateBoard_1 = generateBoard_1_1;
+            },
+            function (misc_2_1) {
+                misc_2 = misc_2_1;
             }
         ],
         execute: function () {
@@ -176,34 +180,22 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
                     this.length = length;
                 }
             };
-            Board = class Board {
-                constructor(rows, columns) {
-                    this.cells = new Array(rows);
-                    for (let i = 0; i < rows; i++) {
-                        this.cells[i] = new Array(columns);
-                    }
-                    this.rows = rows;
-                    this.columns = columns;
-                }
-                randomize() {
-                    for (let i = 0; i < this.rows; i++) {
-                        for (let j = 0; j < this.columns; j++) {
-                            this.cells[i][j] = new Cell(Bicolor_1.getRandomBicolor());
-                        }
-                    }
+            BoardController = class BoardController {
+                constructor(model) {
+                    this.model = model;
                 }
                 findChunks() {
                     let counter = 0;
-                    for (let i = 0; i < this.rows; i++) {
+                    for (let i = 0; i < this.model.rows; i++) {
                         let startJ = 0;
-                        for (let j = 1; j <= this.columns; j++) {
-                            const prevCell = this.cells[i][j - 1];
-                            const cell = j === this.columns ? undefined : this.cells[i][j];
+                        for (let j = 1; j <= this.model.columns; j++) {
+                            const prevCell = this.model.cells[i][j - 1];
+                            const cell = j === this.model.columns ? undefined : this.model.cells[i][j];
                             if (!cell || !prevCell || !Bicolor_1.bicolorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = j - startJ;
                                 if (chunkLen > 2) {
                                     for (let jj = startJ; jj < startJ + chunkLen; jj++) {
-                                        this.cells[i][jj] = undefined;
+                                        this.model.cells[i][jj] = undefined;
                                     }
                                     counter += 1;
                                 }
@@ -211,16 +203,16 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
                             }
                         }
                     }
-                    for (let j = 0; j < this.columns; j++) {
+                    for (let j = 0; j < this.model.columns; j++) {
                         let startI = 0;
-                        for (let i = 1; i <= this.rows; i++) {
-                            const prevCell = this.cells[i - 1][j];
-                            const cell = i === this.rows ? undefined : this.cells[i][j];
+                        for (let i = 1; i <= this.model.rows; i++) {
+                            const prevCell = this.model.cells[i - 1][j];
+                            const cell = i === this.model.rows ? undefined : this.model.cells[i][j];
                             if (!cell || !prevCell || !Bicolor_1.bicolorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = i - startI;
                                 if (chunkLen > 2) {
                                     for (let ii = startI; ii < startI + chunkLen; ii++) {
-                                        this.cells[ii][j] = undefined;
+                                        this.model.cells[ii][j] = undefined;
                                     }
                                     counter += 1;
                                 }
@@ -231,25 +223,25 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
                     return counter;
                 }
                 moveCell(coords, newCoords) {
-                    if (newCoords.valid(this)) {
-                        const tmp = this.cells[coords.row][coords.column];
-                        this.cells[coords.row][coords.column] = this.cells[newCoords.row][newCoords.column];
-                        this.cells[newCoords.row][newCoords.column] = tmp;
+                    if (newCoords.valid(this.model)) {
+                        const tmp = this.model.cells[coords.row][coords.column];
+                        this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
+                        this.model.cells[newCoords.row][newCoords.column] = tmp;
                     }
                 }
                 shake() {
                     let counter = 0;
-                    for (let i = this.rows - 1; i >= 0; i--) {
-                        for (let j = 0; j < this.columns; j++) {
-                            if (i === 0 && !this.cells[i][j]) {
-                                this.cells[i][j] = new Cell(Bicolor_1.getRandomBicolor());
+                    for (let i = this.model.rows - 1; i >= 0; i--) {
+                        for (let j = 0; j < this.model.columns; j++) {
+                            if (i === 0 && !this.model.cells[i][j]) {
+                                this.model.cells[i][j] = new Cell(misc_2.getRandomElement(this.model.bicolors));
                                 counter += 1;
                                 break;
                             }
-                            if (!this.cells[i][j]) {
+                            if (!this.model.cells[i][j]) {
                                 this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
-                                if (i - 1 === 0 && !this.cells[i - 1][j]) {
-                                    this.cells[i - 1][j] = new Cell(Bicolor_1.getRandomBicolor());
+                                if (i - 1 === 0 && !this.model.cells[i - 1][j]) {
+                                    this.model.cells[i - 1][j] = new Cell(misc_2.getRandomElement(this.model.bicolors));
                                 }
                                 counter += 1;
                             }
@@ -258,8 +250,32 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
                     return counter;
                 }
             };
-            board = new Board(10, 10);
-            board.randomize();
+            bicolors = [{
+                    leftColor: "red",
+                    rightColor: "red",
+                }, {
+                    leftColor: "blue",
+                    rightColor: "blue",
+                }, {
+                    leftColor: "green",
+                    rightColor: "green",
+                }, {
+                    leftColor: "yellow",
+                    rightColor: "yellow",
+                }, {
+                    leftColor: "green",
+                    rightColor: "yellow",
+                }, {
+                    leftColor: "yellow",
+                    rightColor: "green",
+                }, {
+                    leftColor: "blue",
+                    rightColor: "yellow",
+                }, {
+                    leftColor: "yellow",
+                    rightColor: "blue",
+                }];
+            board = new BoardController(generateBoard_1.generateBoard(10, 10, bicolors));
             shakeUntil();
             refresh();
             mdX = 0;
@@ -304,8 +320,8 @@ System.register("main", ["Bicolor"], function (exports_3, context_3) {
         }
     };
 });
-System.register("utils/imageData", [], function (exports_4, context_4) {
-    var __moduleName = context_4 && context_4.id;
+System.register("utils/imageData", [], function (exports_6, context_6) {
+    var __moduleName = context_6 && context_6.id;
     function setPixelI(imageData, i, r, g, b, a = 1) {
         // tslint:disable-next-line:no-bitwise
         const offset = i << 2;
@@ -314,22 +330,22 @@ System.register("utils/imageData", [], function (exports_4, context_4) {
         imageData.data[offset + 2] = b;
         imageData.data[offset + 3] = a;
     }
-    exports_4("setPixelI", setPixelI);
+    exports_6("setPixelI", setPixelI);
     function scaleNorm(v) {
         return Math.floor(v * almost256);
     }
     function setPixelNormI(imageData, i, r, g, b, a = 1) {
         setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
     }
-    exports_4("setPixelNormI", setPixelNormI);
+    exports_6("setPixelNormI", setPixelNormI);
     function setPixelXY(imageData, x, y, r, g, b, a = 255) {
         setPixelI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_4("setPixelXY", setPixelXY);
+    exports_6("setPixelXY", setPixelXY);
     function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
         setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_4("setPixelNormXY", setPixelNormXY);
+    exports_6("setPixelNormXY", setPixelNormXY);
     var almost256;
     return {
         setters: [],
@@ -339,8 +355,8 @@ System.register("utils/imageData", [], function (exports_4, context_4) {
     };
 });
 // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_5, context_5) {
-    var __moduleName = context_5 && context_5.id;
+System.register("utils/Random", [], function (exports_7, context_7) {
+    var __moduleName = context_7 && context_7.id;
     var MAX_INT32, MINSTD, Random;
     return {
         setters: [],
@@ -364,7 +380,7 @@ System.register("utils/Random", [], function (exports_5, context_5) {
                     return (this.next() - 1) / (MAX_INT32 - 1);
                 }
             };
-            exports_5("Random", Random);
+            exports_7("Random", Random);
         }
     };
 });

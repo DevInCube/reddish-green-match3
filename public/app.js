@@ -1,79 +1,75 @@
-System.register("Color", [], function (exports_1, context_1) {
+System.register("utils/misc", [], function (exports_1, context_1) {
     var __moduleName = context_1 && context_1.id;
-    var Color;
+    function isVisible(elt) {
+        const style = window.getComputedStyle(elt);
+        return (style.width !== null && +style.width !== 0)
+            && (style.height !== null && +style.height !== 0)
+            && (style.opacity !== null && +style.opacity !== 0)
+            && style.display !== "none"
+            && style.visibility !== "hidden";
+    }
+    exports_1("isVisible", isVisible);
+    function adjust(x, ...applyAdjustmentList) {
+        for (const applyAdjustment of applyAdjustmentList) {
+            applyAdjustment(x);
+        }
+        return x;
+    }
+    exports_1("adjust", adjust);
+    function getRandomElement(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
+    exports_1("getRandomElement", getRandomElement);
     return {
         setters: [],
         execute: function () {
-            Color = class Color {
-                constructor(left, right) {
-                    this.leftColor = left;
-                    this.rightColor = right || left;
-                }
-                equals(other) {
-                    return (this.leftColor === other.leftColor && this.rightColor === other.rightColor
-                        || this.leftColor === other.rightColor && this.rightColor === other.leftColor);
-                }
-                static getRandom() {
-                    const fixed = [
-                        new Color("red"),
-                        new Color("blue"),
-                        new Color("green"),
-                        new Color("yellow"),
-                        new Color("green", "yellow"),
-                        new Color("yellow", "green"),
-                        new Color("blue", "yellow"),
-                        new Color("yellow", "blue"),
-                    ];
-                    return fixed[Math.trunc(Math.random() * fixed.length)];
-                    const left = randomColorString();
-                    let right = randomColorString();
-                    if (Math.trunc(Math.random() * 3) === 0) {
-                        right = left;
-                    }
-                    return new Color(left, right);
-                    function randomColorString() {
-                        return Color.colors[Math.trunc(Math.random() * Color.colors.length)];
-                    }
-                }
-            };
-            Color.colors = [
-                "yellow",
-                "red",
-                "blue",
-                "green",
-                "cyan",
-            ];
-            exports_1("Color", Color);
         }
     };
 });
-// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_2, context_2) {
+System.register("Color", ["utils/misc"], function (exports_2, context_2) {
     var __moduleName = context_2 && context_2.id;
-    var MAX_INT32, MINSTD, Random;
+    function colorEquals(color1, color2) {
+        return (color1.leftColor === color2.leftColor && color1.rightColor === color2.rightColor
+            || color1.leftColor === color2.rightColor && color1.rightColor === color2.leftColor);
+    }
+    exports_2("colorEquals", colorEquals);
+    function getRandomColor() {
+        return misc_1.getRandomElement(colors);
+    }
+    exports_2("getRandomColor", getRandomColor);
+    var misc_1, colors;
     return {
-        setters: [],
-        execute: function () {// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-            MAX_INT32 = 2147483647;
-            MINSTD = 16807;
-            Random = class Random {
-                constructor(seed) {
-                    if (!Number.isInteger(seed)) {
-                        throw new TypeError("Expected `seed` to be a `integer`");
-                    }
-                    this.seed = seed % MAX_INT32;
-                    if (this.seed <= 0) {
-                        this.seed += (MAX_INT32 - 1);
-                    }
-                }
-                next() {
-                    return this.seed = this.seed * MINSTD % MAX_INT32;
-                }
-                nextFloat() {
-                    return (this.next() - 1) / (MAX_INT32 - 1);
-                }
-            };
-            exports_2("Random", Random);
+        setters: [
+            function (misc_1_1) {
+                misc_1 = misc_1_1;
+            }
+        ],
+        execute: function () {
+            colors = [{
+                    leftColor: "red",
+                    rightColor: "red",
+                }, {
+                    leftColor: "blue",
+                    rightColor: "blue",
+                }, {
+                    leftColor: "green",
+                    rightColor: "green",
+                }, {
+                    leftColor: "yellow",
+                    rightColor: "yellow",
+                }, {
+                    leftColor: "green",
+                    rightColor: "yellow",
+                }, {
+                    leftColor: "yellow",
+                    rightColor: "green",
+                }, {
+                    leftColor: "blue",
+                    rightColor: "yellow",
+                }, {
+                    leftColor: "yellow",
+                    rightColor: "blue",
+                }];
         }
     };
 });
@@ -192,7 +188,7 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                 randomize() {
                     for (let i = 0; i < this.rows; i++) {
                         for (let j = 0; j < this.columns; j++) {
-                            this.cells[i][j] = new Cell(Color_1.Color.getRandom());
+                            this.cells[i][j] = new Cell(Color_1.getRandomColor());
                         }
                     }
                 }
@@ -203,7 +199,7 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                         for (let j = 1; j <= this.columns; j++) {
                             const prevCell = this.cells[i][j - 1];
                             const cell = j === this.columns ? undefined : this.cells[i][j];
-                            if (!cell || !prevCell || !cell.color.equals(prevCell.color)) {
+                            if (!cell || !prevCell || !Color_1.colorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = j - startJ;
                                 if (chunkLen > 2) {
                                     for (let jj = startJ; jj < startJ + chunkLen; jj++) {
@@ -220,7 +216,7 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                         for (let i = 1; i <= this.rows; i++) {
                             const prevCell = this.cells[i - 1][j];
                             const cell = i === this.rows ? undefined : this.cells[i][j];
-                            if (!cell || !prevCell || !cell.color.equals(prevCell.color)) {
+                            if (!cell || !prevCell || !Color_1.colorEquals(cell.color, prevCell.color)) {
                                 const chunkLen = i - startI;
                                 if (chunkLen > 2) {
                                     for (let ii = startI; ii < startI + chunkLen; ii++) {
@@ -246,14 +242,14 @@ System.register("main", ["Color"], function (exports_3, context_3) {
                     for (let i = this.rows - 1; i >= 0; i--) {
                         for (let j = 0; j < this.columns; j++) {
                             if (i === 0 && !this.cells[i][j]) {
-                                this.cells[i][j] = new Cell(Color_1.Color.getRandom());
+                                this.cells[i][j] = new Cell(Color_1.getRandomColor());
                                 counter += 1;
                                 break;
                             }
                             if (!this.cells[i][j]) {
                                 this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
                                 if (i - 1 === 0 && !this.cells[i - 1][j]) {
-                                    this.cells[i - 1][j] = new Cell(Color_1.Color.getRandom());
+                                    this.cells[i - 1][j] = new Cell(Color_1.getRandomColor());
                                 }
                                 counter += 1;
                             }
@@ -342,31 +338,33 @@ System.register("utils/imageData", [], function (exports_4, context_4) {
         }
     };
 });
-System.register("utils/misc", [], function (exports_5, context_5) {
+// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+System.register("utils/Random", [], function (exports_5, context_5) {
     var __moduleName = context_5 && context_5.id;
-    function isVisible(elt) {
-        const style = window.getComputedStyle(elt);
-        return (style.width !== null && +style.width !== 0)
-            && (style.height !== null && +style.height !== 0)
-            && (style.opacity !== null && +style.opacity !== 0)
-            && style.display !== "none"
-            && style.visibility !== "hidden";
-    }
-    exports_5("isVisible", isVisible);
-    function adjust(x, ...applyAdjustmentList) {
-        for (const applyAdjustment of applyAdjustmentList) {
-            applyAdjustment(x);
-        }
-        return x;
-    }
-    exports_5("adjust", adjust);
-    function getRandomElement(array) {
-        return array[Math.floor(Math.random() * array.length)];
-    }
-    exports_5("getRandomElement", getRandomElement);
+    var MAX_INT32, MINSTD, Random;
     return {
         setters: [],
-        execute: function () {
+        execute: function () {// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+            MAX_INT32 = 2147483647;
+            MINSTD = 16807;
+            Random = class Random {
+                constructor(seed) {
+                    if (!Number.isInteger(seed)) {
+                        throw new TypeError("Expected `seed` to be a `integer`");
+                    }
+                    this.seed = seed % MAX_INT32;
+                    if (this.seed <= 0) {
+                        this.seed += (MAX_INT32 - 1);
+                    }
+                }
+                next() {
+                    return this.seed = this.seed * MINSTD % MAX_INT32;
+                }
+                nextFloat() {
+                    return (this.next() - 1) / (MAX_INT32 - 1);
+                }
+            };
+            exports_5("Random", Random);
         }
     };
 });

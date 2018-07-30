@@ -43,12 +43,12 @@ System.register("utils/misc", [], function (exports_3, context_3) {
     };
 });
 System.register("BoardController", ["utils/misc"], function (exports_4, context_4) {
+    var misc_1, CellCoords, BoardController;
     var __moduleName = context_4 && context_4.id;
     function bicolorEquals(bicolor1, bicolor2) {
         return (bicolor1.leftColor === bicolor2.leftColor && bicolor1.rightColor === bicolor2.rightColor
             || bicolor1.leftColor === bicolor2.rightColor && bicolor1.rightColor === bicolor2.leftColor);
     }
-    var misc_1, CellCoords, BoardController;
     return {
         setters: [
             function (misc_1_1) {
@@ -148,8 +148,8 @@ System.register("BoardController", ["utils/misc"], function (exports_4, context_
     };
 });
 System.register("BoardView", ["BoardController"], function (exports_5, context_5) {
-    var __moduleName = context_5 && context_5.id;
     var BoardController_1, BoardView;
+    var __moduleName = context_5 && context_5.id;
     return {
         setters: [
             function (BoardController_1_1) {
@@ -199,6 +199,7 @@ System.register("BoardView", ["BoardController"], function (exports_5, context_5
     };
 });
 System.register("generateBoard", ["utils/misc"], function (exports_6, context_6) {
+    var misc_2;
     var __moduleName = context_6 && context_6.id;
     function generateBoard(rowCount, columnCount, bicolors) {
         return {
@@ -211,7 +212,6 @@ System.register("generateBoard", ["utils/misc"], function (exports_6, context_6)
         };
     }
     exports_6("generateBoard", generateBoard);
-    var misc_2;
     return {
         setters: [
             function (misc_2_1) {
@@ -222,7 +222,8 @@ System.register("generateBoard", ["utils/misc"], function (exports_6, context_6)
         }
     };
 });
-System.register("main", ["generateBoard", "BoardController", "BoardView"], function (exports_7, context_7) {
+System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.js"], function (exports_7, context_7) {
+    var generateBoard_1, BoardController_2, BoardView_1, PIXI, app, canvas, ctx, width, mousePressed, bicolors, boardController, leftBoardView, rightBoardView, mdX, mdY;
     var __moduleName = context_7 && context_7.id;
     function render() {
         leftBoardView.render();
@@ -241,7 +242,6 @@ System.register("main", ["generateBoard", "BoardController", "BoardView"], funct
             }
         }
     }
-    var generateBoard_1, BoardController_2, BoardView_1, canvas, ctx, width, mousePressed, bicolors, boardController, leftBoardView, rightBoardView, mdX, mdY;
     return {
         setters: [
             function (generateBoard_1_1) {
@@ -252,9 +252,13 @@ System.register("main", ["generateBoard", "BoardController", "BoardView"], funct
             },
             function (BoardView_1_1) {
                 BoardView_1 = BoardView_1_1;
+            },
+            function (PIXI_1) {
+                PIXI = PIXI_1;
             }
         ],
         execute: function () {
+            app = new PIXI.Application();
             canvas = document.getElementById("canvas");
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
@@ -339,44 +343,10 @@ System.register("main", ["generateBoard", "BoardController", "BoardView"], funct
         }
     };
 });
-System.register("utils/imageData", [], function (exports_8, context_8) {
-    var __moduleName = context_8 && context_8.id;
-    function setPixelI(imageData, i, r, g, b, a = 1) {
-        // tslint:disable-next-line:no-bitwise
-        const offset = i << 2;
-        imageData.data[offset + 0] = r;
-        imageData.data[offset + 1] = g;
-        imageData.data[offset + 2] = b;
-        imageData.data[offset + 3] = a;
-    }
-    exports_8("setPixelI", setPixelI);
-    function scaleNorm(v) {
-        return Math.floor(v * almost256);
-    }
-    function setPixelNormI(imageData, i, r, g, b, a = 1) {
-        setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
-    }
-    exports_8("setPixelNormI", setPixelNormI);
-    function setPixelXY(imageData, x, y, r, g, b, a = 255) {
-        setPixelI(imageData, y * imageData.width + x, r, g, b, a);
-    }
-    exports_8("setPixelXY", setPixelXY);
-    function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
-        setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
-    }
-    exports_8("setPixelNormXY", setPixelNormXY);
-    var almost256;
-    return {
-        setters: [],
-        execute: function () {
-            almost256 = 256 - Number.MIN_VALUE;
-        }
-    };
-});
 // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_9, context_9) {
-    var __moduleName = context_9 && context_9.id;
+System.register("utils/Random", [], function (exports_8, context_8) {
     var MAX_INT32, MINSTD, Random;
+    var __moduleName = context_8 && context_8.id;
     return {
         setters: [],
         execute: function () {// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
@@ -399,7 +369,41 @@ System.register("utils/Random", [], function (exports_9, context_9) {
                     return (this.next() - 1) / (MAX_INT32 - 1);
                 }
             };
-            exports_9("Random", Random);
+            exports_8("Random", Random);
+        }
+    };
+});
+System.register("utils/imageData", [], function (exports_9, context_9) {
+    var almost256;
+    var __moduleName = context_9 && context_9.id;
+    function setPixelI(imageData, i, r, g, b, a = 1) {
+        // tslint:disable-next-line:no-bitwise
+        const offset = i << 2;
+        imageData.data[offset + 0] = r;
+        imageData.data[offset + 1] = g;
+        imageData.data[offset + 2] = b;
+        imageData.data[offset + 3] = a;
+    }
+    exports_9("setPixelI", setPixelI);
+    function scaleNorm(v) {
+        return Math.floor(v * almost256);
+    }
+    function setPixelNormI(imageData, i, r, g, b, a = 1) {
+        setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
+    }
+    exports_9("setPixelNormI", setPixelNormI);
+    function setPixelXY(imageData, x, y, r, g, b, a = 255) {
+        setPixelI(imageData, y * imageData.width + x, r, g, b, a);
+    }
+    exports_9("setPixelXY", setPixelXY);
+    function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
+        setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
+    }
+    exports_9("setPixelNormXY", setPixelNormXY);
+    return {
+        setters: [],
+        execute: function () {
+            almost256 = 256 - Number.MIN_VALUE;
         }
     };
 });

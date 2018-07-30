@@ -2,6 +2,9 @@ import { generateBoard } from "./generateBoard";
 import { BoardController, CellCoords } from "./BoardController";
 import { BoardView } from "./BoardView";
 
+import * as PIXI from "pixi.js";
+const app = new PIXI.Application();
+
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;

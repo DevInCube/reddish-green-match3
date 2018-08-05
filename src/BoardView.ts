@@ -19,7 +19,9 @@ export class BoardView {
         this.context.strokeRect(
             this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE,
             BoardView.CELL_SIZE, BoardView.CELL_SIZE);
-        this.context.fillStyle = !cell.color ? "black" : (this.isRight ? cell.color.rightColor : cell.color.leftColor);
+        this.context.fillStyle = !cell.bulb
+            ? "black"
+            : (this.isRight ? cell.bulb.color.rightColor : cell.bulb.color.leftColor);
         this.context.fillRect(
             this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE,
             BoardView.CELL_SIZE, BoardView.CELL_SIZE);

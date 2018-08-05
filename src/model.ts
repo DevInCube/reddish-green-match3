@@ -1,7 +1,8 @@
 import { Bicolor } from "./Bicolor";
+import { BulbModel } from "./Bulb";
 
 export interface CellModel {
-    color: Bicolor | undefined;
+    bulb?: BulbModel;
 }
 
 export interface BoardModel {

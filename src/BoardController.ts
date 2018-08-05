@@ -31,13 +31,13 @@ export class BoardController {
             for (let j = 1; j <= this.model.columnCount; j++) {
                 const prevCell = this.model.cells[i][j - 1] as CellModel;
                 const cell = j === this.model.columnCount ? undefined : this.model.cells[i][j] as CellModel;
-                if (!cell || !cell.color || !prevCell || !prevCell.color
-                    || !bicolorEquals(cell.color, prevCell.color)
+                if (!cell || !cell.bulb || !prevCell || !prevCell.bulb
+                    || !bicolorEquals(cell.bulb.color, prevCell.bulb.color)
                 ) {
                     const chunkLen = j - startJ;
                     if (chunkLen > 2) {
                         for (let jj = startJ; jj < startJ + chunkLen; jj++) {
-                            this.model.cells[i][jj].color = undefined;
+                            this.model.cells[i][jj].bulb = undefined;
                         }
                         counter += 1;
                     }
@@ -50,13 +50,13 @@ export class BoardController {
             for (let i = 1; i <= this.model.rowCount; i++) {
                 const prevCell = this.model.cells[i - 1][j];
                 const cell = i === this.model.rowCount ? undefined : this.model.cells[i][j];
-                if (!cell || !cell.color || !prevCell || !prevCell.color
-                    || !bicolorEquals(cell.color, prevCell.color)
+                if (!cell || !cell.bulb || !prevCell || !prevCell.bulb
+                    || !bicolorEquals(cell.bulb.color, prevCell.bulb.color)
                 ) {
                     const chunkLen = i - startI;
                     if (chunkLen > 2) {
                         for (let ii = startI; ii < startI + chunkLen; ii++) {
-                            this.model.cells[ii][j].color = undefined;
+                            this.model.cells[ii][j].bulb = undefined;
                         }
                         counter += 1;
                     }
@@ -86,18 +86,36 @@ export class BoardController {
         let counter = 0;
         for (let i = this.model.rowCount - 1; i >= 0; i--) {
             for (let j = 0; j < this.model.columnCount; j++) {
-                if (i === 0 && !this.model.cells[i][j].color) {
+                if (i === 0 && !this.model.cells[i][j].bulb) {
                     this.model.cells[i][j] = {
-                        color: getRandomElement(this.model.bicolors),
+                        bulb: {
+                            color: getRandomElement(this.model.bicolors),
+                            position: {
+                                row: j,
+                                column: i,
+                            },
+                            isAppearing: false,
+                            isDisappearing: false,
+                            isFalling: false,
+                        },
                     };
                     counter += 1;
                     break;
                 }
-                if (!this.model.cells[i][j].color) {
+                if (!this.model.cells[i][j].bulb) {
                     this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
-                    if (i - 1 === 0 && !this.model.cells[i - 1][j].color) {
+                    if (i - 1 === 0 && !this.model.cells[i - 1][j].bulb) {
                         this.model.cells[i - 1][j] = {
-                            color: getRandomElement(this.model.bicolors),
+                            bulb: {
+                                color: getRandomElement(this.model.bicolors),
+                                position: {
+                                    row: j,
+                                    column: i,
+                                },
+                                isAppearing: false,
+                                isDisappearing: false,
+                                isFalling: false,
+                            },
                         };
                     }
                     counter += 1;

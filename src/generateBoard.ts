@@ -8,10 +8,19 @@ export function generateBoard(rowCount: number, columnCount: number, bicolors: B
         columnCount,
         cells: Array.from(
             { length: columnCount },
-            () => Array.from(
+            (_, column) => Array.from(
                 { length: rowCount },
-                () => ({
-                    color: getRandomElement(bicolors),
+                (__, row) => ({
+                    bulb: {
+                        color: getRandomElement(bicolors),
+                        position: {
+                            row,
+                            column,
+                        },
+                        isAppearing: false,
+                        isDisappearing: false,
+                        isFalling: false,
+                    },
                 }))),
         bicolors,
     };

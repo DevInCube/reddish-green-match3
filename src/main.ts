@@ -3,14 +3,9 @@ import { BoardController, CellCoords } from "./BoardController";
 import { BoardView } from "./BoardView";
 
 import * as PIXI from "pixi.js";
-// const app = new PIXI.Application();
+import { BulbController, BulbView } from "./Bulb";
 
-const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-canvas.width = canvas.clientWidth;
-canvas.height = canvas.clientHeight;
-const ctx = canvas.getContext("2d")!;
 
-const width = canvas.width / 2;
 
 let mousePressed = false;
 
@@ -45,7 +40,50 @@ const bicolors = [{
     leftColor: "red",
     rightColor: "green",
 }];
-const boardController = new BoardController(generateBoard(10, 10, bicolors));
+
+const boardModel = generateBoard(10, 10, bicolors);
+
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+const ctx = canvas.getContext("2d")!;
+
+const height = canvas.height;
+const width = canvas.width / 2;
+
+const app = new PIXI.Application({
+    view: canvas,
+    width: canvas.width,
+    height: canvas.height,
+    forceCanvas: true, // todo remove
+});
+const leftContainer = new PIXI.Container();
+leftContainer.x = width / 2;
+leftContainer.y = height / 2;
+app.stage.addChild(leftContainer);
+
+const rightContainer = new PIXI.Container();
+rightContainer.x = width + width / 2;
+rightContainer.y = height / 2;
+app.stage.addChild(rightContainer);
+
+BulbView.loadResources(app.renderer);
+
+for (const row of boardModel.cells) {
+    for (const bulb of row) {
+        if (bulb.bulb) {
+            // tslint:disable-next-line:no-unused-expression
+            new BulbController(bulb.bulb, leftContainer, rightContainer);
+        }
+    }
+}
+
+leftContainer.pivot.x = leftContainer.width / 2;
+leftContainer.pivot.y = leftContainer.height / 2;
+rightContainer.pivot.x = rightContainer.width / 2;
+rightContainer.pivot.y = rightContainer.height / 2;
+
+const boardController = new BoardController(boardModel);
 
 const leftBoardView = new BoardView(ctx, false, 0, 0, boardController.model);
 const rightBoardView = new BoardView(ctx, true, width, 0, boardController.model);

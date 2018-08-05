@@ -1,4 +1,6 @@
+export type Color = string;
+
 export interface Bicolor {
-    leftColor: string;
-    rightColor: string;
+    leftColor: Color;
+    rightColor: Color;
 }

@@ -14,12 +14,12 @@ export class BoardView {
 
     }
 
-    renderCell(cell: CellModel | undefined, i: number, j: number) {
+    renderCell(cell: CellModel, i: number, j: number) {
         this.context.strokeStyle = "black";
         this.context.strokeRect(
             this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE,
             BoardView.CELL_SIZE, BoardView.CELL_SIZE);
-        this.context.fillStyle = !cell ? "black" : (this.isRight ? cell.color.rightColor : cell.color.leftColor);
+        this.context.fillStyle = !cell.color ? "black" : (this.isRight ? cell.color.rightColor : cell.color.leftColor);
         this.context.fillRect(
             this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE,
             BoardView.CELL_SIZE, BoardView.CELL_SIZE);

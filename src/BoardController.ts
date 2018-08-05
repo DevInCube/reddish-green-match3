@@ -31,11 +31,13 @@ export class BoardController {
             for (let j = 1; j <= this.model.columnCount; j++) {
                 const prevCell = this.model.cells[i][j - 1] as CellModel;
                 const cell = j === this.model.columnCount ? undefined : this.model.cells[i][j] as CellModel;
-                if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
+                if (!cell || !cell.color || !prevCell || !prevCell.color
+                    || !bicolorEquals(cell.color, prevCell.color)
+                ) {
                     const chunkLen = j - startJ;
                     if (chunkLen > 2) {
                         for (let jj = startJ; jj < startJ + chunkLen; jj++) {
-                            this.model.cells[i][jj] = undefined;
+                            this.model.cells[i][jj].color = undefined;
                         }
                         counter += 1;
                     }
@@ -48,11 +50,13 @@ export class BoardController {
             for (let i = 1; i <= this.model.rowCount; i++) {
                 const prevCell = this.model.cells[i - 1][j];
                 const cell = i === this.model.rowCount ? undefined : this.model.cells[i][j];
-                if (!cell || !prevCell || !bicolorEquals(cell.color, prevCell.color)) {
+                if (!cell || !cell.color || !prevCell || !prevCell.color
+                    || !bicolorEquals(cell.color, prevCell.color)
+                ) {
                     const chunkLen = i - startI;
                     if (chunkLen > 2) {
                         for (let ii = startI; ii < startI + chunkLen; ii++) {
-                            this.model.cells[ii][j] = undefined;
+                            this.model.cells[ii][j].color = undefined;
                         }
                         counter += 1;
                     }
@@ -82,16 +86,16 @@ export class BoardController {
         let counter = 0;
         for (let i = this.model.rowCount - 1; i >= 0; i--) {
             for (let j = 0; j < this.model.columnCount; j++) {
-                if (i === 0 && !this.model.cells[i][j]) {
+                if (i === 0 && !this.model.cells[i][j].color) {
                     this.model.cells[i][j] = {
                         color: getRandomElement(this.model.bicolors),
                     };
                     counter += 1;
                     break;
                 }
-                if (!this.model.cells[i][j]) {
+                if (!this.model.cells[i][j].color) {
                     this.moveCell(new CellCoords(i, j), new CellCoords(i - 1, j));
-                    if (i - 1 === 0 && !this.model.cells[i - 1][j]) {
+                    if (i - 1 === 0 && !this.model.cells[i - 1][j].color) {
                         this.model.cells[i - 1][j] = {
                             color: getRandomElement(this.model.bicolors),
                         };

@@ -21,7 +21,7 @@ export class BoardView {
             BoardView.CELL_SIZE, BoardView.CELL_SIZE);
         this.context.fillStyle = !cell.bulb
             ? "black"
-            : (this.isRight ? cell.bulb.color.rightColor : cell.bulb.color.leftColor);
+            : (this.isRight ? cell.bulb.color.right : cell.bulb.color.left);
         this.context.fillRect(
             this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE,
             BoardView.CELL_SIZE, BoardView.CELL_SIZE);

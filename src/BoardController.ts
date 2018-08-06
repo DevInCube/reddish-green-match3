@@ -3,8 +3,8 @@ import { Bicolor } from "./Bicolor";
 import { getRandomElement } from "./utils/misc";
 
 function bicolorEquals(bicolor1: Bicolor, bicolor2: Bicolor) {
-    return (bicolor1.leftColor === bicolor2.leftColor && bicolor1.rightColor === bicolor2.rightColor
-        || bicolor1.leftColor === bicolor2.rightColor && bicolor1.rightColor === bicolor2.leftColor);
+    return (bicolor1.left === bicolor2.left && bicolor1.right === bicolor2.right
+        || bicolor1.left === bicolor2.right && bicolor1.right === bicolor2.left);
 }
 
 export class CellCoords {
@@ -77,8 +77,18 @@ export class BoardController {
     moveCell(coords: CellCoords, newCoords: CellCoords) {
         if (this.areCoordsValid(newCoords)) {
             const tmp = this.model.cells[coords.row][coords.column];
+
             this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
+            if (this.model.cells[coords.row][coords.column].bulb) {
+                this.model.cells[coords.row][coords.column].bulb!.position.row = coords.row;
+                this.model.cells[coords.row][coords.column].bulb!.position.column = coords.column;
+            }
+
             this.model.cells[newCoords.row][newCoords.column] = tmp;
+            if (this.model.cells[newCoords.row][newCoords.column].bulb) {
+                this.model.cells[newCoords.row][newCoords.column].bulb!.position.row = newCoords.row;
+                this.model.cells[newCoords.row][newCoords.column].bulb!.position.column = newCoords.column;
+            }
         }
     }
 

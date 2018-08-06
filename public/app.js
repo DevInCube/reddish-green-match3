@@ -1,26 +1,46 @@
-System.register("Bicolor", [], function (exports_1, context_1) {
+System.register("Bi", [], function (exports_1, context_1) {
     var __moduleName = context_1 && context_1.id;
+    function* bii(bi) {
+        yield bi.left;
+        yield bi.right;
+    }
+    exports_1("bii", bii);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("Bulb", ["pixi.js"], function (exports_2, context_2) {
-    var PIXI, BulbController, BulbView;
+System.register("Bicolor", [], function (exports_2, context_2) {
     var __moduleName = context_2 && context_2.id;
+    return {
+        setters: [],
+        execute: function () {
+        }
+    };
+});
+System.register("Bulb", ["pixi.js", "Bi"], function (exports_3, context_3) {
+    var PIXI, Bi_1, BulbController, BulbView;
+    var __moduleName = context_3 && context_3.id;
     return {
         setters: [
             function (PIXI_1) {
                 PIXI = PIXI_1;
+            },
+            function (Bi_1_1) {
+                Bi_1 = Bi_1_1;
             }
         ],
         execute: function () {
             BulbController = class BulbController {
-                constructor(model, leftContainer, rightContainer) {
+                constructor(model, container) {
                     this.model = model;
-                    this.leftView = new BulbView(this.model, true, leftContainer);
-                    this.rightView = new BulbView(this.model, false, rightContainer);
+                    this.view = {
+                        left: new BulbView(this.model, true),
+                        right: new BulbView(this.model, false),
+                    };
+                    container.left.addChild(this.view.left);
+                    container.right.addChild(this.view.right);
                 }
                 static createModel(color, column) {
                     return {
@@ -36,8 +56,9 @@ System.register("Bulb", ["pixi.js"], function (exports_2, context_2) {
                 }
                 sync() {
                     if (this.model.isDisappearing) {
-                        this.leftView.remove();
-                        this.rightView.remove();
+                        for (const monoView of Bi_1.bii(this.view)) {
+                            monoView.removeSelf();
+                        }
                     }
                     this.model.isFalling = false;
                     this.model.isAppearing = false;
@@ -51,15 +72,12 @@ System.register("Bulb", ["pixi.js"], function (exports_2, context_2) {
                     this.model.isDisappearing = true;
                 }
             };
-            exports_2("BulbController", BulbController);
-            BulbView = class BulbView {
-                constructor(model, isLeft, container) {
+            exports_3("BulbController", BulbController);
+            BulbView = class BulbView extends PIXI.Sprite {
+                constructor(model, isLeft) {
+                    super(BulbView.resources[isLeft ? model.color.left : model.color.right]);
                     this.model = model;
                     this.isLeft = isLeft;
-                    this.sprite = new PIXI.Sprite(BulbView.resources[this.getColor()]);
-                    this.sprite.x = this.model.position.column * BulbView.radius * 2;
-                    this.sprite.y = this.model.position.row * BulbView.radius * 2;
-                    container.addChild(this.sprite);
                 }
                 static loadResources(renderer) {
                     function generateBulbTexture(color) {
@@ -76,28 +94,30 @@ System.register("Bulb", ["pixi.js"], function (exports_2, context_2) {
                         yelllow: generateBulbTexture(0xFFFF00),
                     };
                 }
-                getColor() {
-                    return this.isLeft ? this.model.color.leftColor : this.model.color.rightColor;
+                removeSelf() {
+                    this.parent.removeChild(this);
                 }
-                remove() {
-                    this.sprite.parent.removeChild(this.sprite);
+                updateTransform() {
+                    this.x = this.model.position.column * BulbView.radius * 2;
+                    this.y = this.model.position.row * BulbView.radius * 2;
+                    super.updateTransform();
                 }
             };
             BulbView.radius = 10;
-            exports_2("BulbView", BulbView);
+            exports_3("BulbView", BulbView);
         }
     };
 });
-System.register("model", [], function (exports_3, context_3) {
-    var __moduleName = context_3 && context_3.id;
+System.register("model", [], function (exports_4, context_4) {
+    var __moduleName = context_4 && context_4.id;
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("utils/misc", [], function (exports_4, context_4) {
-    var __moduleName = context_4 && context_4.id;
+System.register("utils/misc", [], function (exports_5, context_5) {
+    var __moduleName = context_5 && context_5.id;
     function isVisible(elt) {
         const style = window.getComputedStyle(elt);
         return (style.width !== null && +style.width !== 0)
@@ -106,30 +126,30 @@ System.register("utils/misc", [], function (exports_4, context_4) {
             && style.display !== "none"
             && style.visibility !== "hidden";
     }
-    exports_4("isVisible", isVisible);
+    exports_5("isVisible", isVisible);
     function adjust(x, ...applyAdjustmentList) {
         for (const applyAdjustment of applyAdjustmentList) {
             applyAdjustment(x);
         }
         return x;
     }
-    exports_4("adjust", adjust);
+    exports_5("adjust", adjust);
     function getRandomElement(array) {
         return array[Math.floor(Math.random() * array.length)];
     }
-    exports_4("getRandomElement", getRandomElement);
+    exports_5("getRandomElement", getRandomElement);
     return {
         setters: [],
         execute: function () {
         }
     };
 });
-System.register("BoardController", ["utils/misc"], function (exports_5, context_5) {
+System.register("BoardController", ["utils/misc"], function (exports_6, context_6) {
     var misc_1, CellCoords, BoardController;
-    var __moduleName = context_5 && context_5.id;
+    var __moduleName = context_6 && context_6.id;
     function bicolorEquals(bicolor1, bicolor2) {
-        return (bicolor1.leftColor === bicolor2.leftColor && bicolor1.rightColor === bicolor2.rightColor
-            || bicolor1.leftColor === bicolor2.rightColor && bicolor1.rightColor === bicolor2.leftColor);
+        return (bicolor1.left === bicolor2.left && bicolor1.right === bicolor2.right
+            || bicolor1.left === bicolor2.right && bicolor1.right === bicolor2.left);
     }
     return {
         setters: [
@@ -144,7 +164,7 @@ System.register("BoardController", ["utils/misc"], function (exports_5, context_
                     this.column = c;
                 }
             };
-            exports_5("CellCoords", CellCoords);
+            exports_6("CellCoords", CellCoords);
             BoardController = class BoardController {
                 constructor(model) {
                     this.model = model;
@@ -199,7 +219,15 @@ System.register("BoardController", ["utils/misc"], function (exports_5, context_
                     if (this.areCoordsValid(newCoords)) {
                         const tmp = this.model.cells[coords.row][coords.column];
                         this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
+                        if (this.model.cells[coords.row][coords.column].bulb) {
+                            this.model.cells[coords.row][coords.column].bulb.position.row = coords.row;
+                            this.model.cells[coords.row][coords.column].bulb.position.column = coords.column;
+                        }
                         this.model.cells[newCoords.row][newCoords.column] = tmp;
+                        if (this.model.cells[newCoords.row][newCoords.column].bulb) {
+                            this.model.cells[newCoords.row][newCoords.column].bulb.position.row = newCoords.row;
+                            this.model.cells[newCoords.row][newCoords.column].bulb.position.column = newCoords.column;
+                        }
                     }
                 }
                 shake() {
@@ -245,13 +273,13 @@ System.register("BoardController", ["utils/misc"], function (exports_5, context_
                     return counter;
                 }
             };
-            exports_5("BoardController", BoardController);
+            exports_6("BoardController", BoardController);
         }
     };
 });
-System.register("BoardView", ["BoardController"], function (exports_6, context_6) {
+System.register("BoardView", ["BoardController"], function (exports_7, context_7) {
     var BoardController_1, BoardView;
-    var __moduleName = context_6 && context_6.id;
+    var __moduleName = context_7 && context_7.id;
     return {
         setters: [
             function (BoardController_1_1) {
@@ -272,7 +300,7 @@ System.register("BoardView", ["BoardController"], function (exports_6, context_6
                     this.context.strokeRect(this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE, BoardView.CELL_SIZE, BoardView.CELL_SIZE);
                     this.context.fillStyle = !cell.bulb
                         ? "black"
-                        : (this.isRight ? cell.bulb.color.rightColor : cell.bulb.color.leftColor);
+                        : (this.isRight ? cell.bulb.color.right : cell.bulb.color.left);
                     this.context.fillRect(this.x + j * BoardView.CELL_SIZE, this.y + i * BoardView.CELL_SIZE, BoardView.CELL_SIZE, BoardView.CELL_SIZE);
                 }
                 render() {
@@ -298,13 +326,13 @@ System.register("BoardView", ["BoardController"], function (exports_6, context_6
                 }
             };
             BoardView.CELL_SIZE = 32;
-            exports_6("BoardView", BoardView);
+            exports_7("BoardView", BoardView);
         }
     };
 });
-System.register("generateBoard", ["utils/misc"], function (exports_7, context_7) {
+System.register("generateBoard", ["utils/misc"], function (exports_8, context_8) {
     var misc_2;
-    var __moduleName = context_7 && context_7.id;
+    var __moduleName = context_8 && context_8.id;
     function generateBoard(rowCount, columnCount, bicolors) {
         return {
             rowCount,
@@ -324,7 +352,7 @@ System.register("generateBoard", ["utils/misc"], function (exports_7, context_7)
             bicolors,
         };
     }
-    exports_7("generateBoard", generateBoard);
+    exports_8("generateBoard", generateBoard);
     return {
         setters: [
             function (misc_2_1) {
@@ -335,9 +363,9 @@ System.register("generateBoard", ["utils/misc"], function (exports_7, context_7)
         }
     };
 });
-System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.js", "Bulb"], function (exports_8, context_8) {
-    var generateBoard_1, BoardController_2, BoardView_1, PIXI, Bulb_1, mousePressed, bicolors, boardModel, canvas, ctx, height, width, app, leftContainer, rightContainer, boardController, leftBoardView, rightBoardView, mdX, mdY;
-    var __moduleName = context_8 && context_8.id;
+System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.js", "Bulb", "Bi"], function (exports_9, context_9) {
+    var generateBoard_1, BoardController_2, BoardView_1, PIXI, Bulb_1, Bi_2, mousePressed, bicolors, boardModel, canvas, ctx, height, width, app, container, boardController, leftBoardView, rightBoardView, mdX, mdY;
+    var __moduleName = context_9 && context_9.id;
     function render() {
         leftBoardView.render();
         rightBoardView.render();
@@ -371,40 +399,43 @@ System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.
             },
             function (Bulb_1_1) {
                 Bulb_1 = Bulb_1_1;
+            },
+            function (Bi_2_1) {
+                Bi_2 = Bi_2_1;
             }
         ],
         execute: function () {
             mousePressed = false;
             bicolors = [{
-                    leftColor: "red",
-                    rightColor: "red",
+                    left: "red",
+                    right: "red",
                 }, {
-                    leftColor: "red",
-                    rightColor: "red",
+                    left: "red",
+                    right: "red",
                 }, {
-                    leftColor: "blue",
-                    rightColor: "blue",
+                    left: "blue",
+                    right: "blue",
                 }, {
-                    leftColor: "blue",
-                    rightColor: "blue",
+                    left: "blue",
+                    right: "blue",
                 }, {
-                    leftColor: "green",
-                    rightColor: "green",
+                    left: "green",
+                    right: "green",
                 }, {
-                    leftColor: "green",
-                    rightColor: "green",
+                    left: "green",
+                    right: "green",
                 }, {
-                    leftColor: "yellow",
-                    rightColor: "yellow",
+                    left: "yellow",
+                    right: "yellow",
                 }, {
-                    leftColor: "yellow",
-                    rightColor: "yellow",
+                    left: "yellow",
+                    right: "yellow",
                 }, {
-                    leftColor: "green",
-                    rightColor: "red",
+                    left: "green",
+                    right: "red",
                 }, {
-                    leftColor: "red",
-                    rightColor: "green",
+                    left: "red",
+                    right: "green",
                 }];
             boardModel = generateBoard_1.generateBoard(10, 10, bicolors);
             canvas = document.getElementById("canvas");
@@ -419,27 +450,29 @@ System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.
                 height: canvas.height,
                 forceCanvas: true,
             });
-            leftContainer = new PIXI.Container();
-            leftContainer.x = width / 2;
-            leftContainer.y = height / 2;
-            app.stage.addChild(leftContainer);
-            rightContainer = new PIXI.Container();
-            rightContainer.x = width + width / 2;
-            rightContainer.y = height / 2;
-            app.stage.addChild(rightContainer);
+            container = {
+                left: new PIXI.Container(),
+                right: new PIXI.Container(),
+            };
+            container.left.x = width / 2;
+            container.left.y = height / 2;
+            app.stage.addChild(container.left);
+            container.right.x = width + width / 2;
+            container.right.y = height / 2;
+            app.stage.addChild(container.right);
             Bulb_1.BulbView.loadResources(app.renderer);
             for (const row of boardModel.cells) {
                 for (const bulb of row) {
                     if (bulb.bulb) {
                         // tslint:disable-next-line:no-unused-expression
-                        new Bulb_1.BulbController(bulb.bulb, leftContainer, rightContainer);
+                        new Bulb_1.BulbController(bulb.bulb, container);
                     }
                 }
             }
-            leftContainer.pivot.x = leftContainer.width / 2;
-            leftContainer.pivot.y = leftContainer.height / 2;
-            rightContainer.pivot.x = rightContainer.width / 2;
-            rightContainer.pivot.y = rightContainer.height / 2;
+            for (const monoContainer of Bi_2.bii(container)) {
+                monoContainer.pivot.x = monoContainer.width / 2;
+                monoContainer.pivot.y = monoContainer.height / 2;
+            }
             boardController = new BoardController_2.BoardController(boardModel);
             leftBoardView = new BoardView_1.BoardView(ctx, false, 0, 0, boardController.model);
             rightBoardView = new BoardView_1.BoardView(ctx, true, width, 0, boardController.model);
@@ -488,9 +521,9 @@ System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.
     };
 });
 // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_9, context_9) {
+System.register("utils/Random", [], function (exports_10, context_10) {
     var MAX_INT32, MINSTD, Random;
-    var __moduleName = context_9 && context_9.id;
+    var __moduleName = context_10 && context_10.id;
     return {
         setters: [],
         execute: function () {// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
@@ -513,13 +546,13 @@ System.register("utils/Random", [], function (exports_9, context_9) {
                     return (this.next() - 1) / (MAX_INT32 - 1);
                 }
             };
-            exports_9("Random", Random);
+            exports_10("Random", Random);
         }
     };
 });
-System.register("utils/imageData", [], function (exports_10, context_10) {
+System.register("utils/imageData", [], function (exports_11, context_11) {
     var almost256;
-    var __moduleName = context_10 && context_10.id;
+    var __moduleName = context_11 && context_11.id;
     function setPixelI(imageData, i, r, g, b, a = 1) {
         // tslint:disable-next-line:no-bitwise
         const offset = i << 2;
@@ -528,22 +561,22 @@ System.register("utils/imageData", [], function (exports_10, context_10) {
         imageData.data[offset + 2] = b;
         imageData.data[offset + 3] = a;
     }
-    exports_10("setPixelI", setPixelI);
+    exports_11("setPixelI", setPixelI);
     function scaleNorm(v) {
         return Math.floor(v * almost256);
     }
     function setPixelNormI(imageData, i, r, g, b, a = 1) {
         setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
     }
-    exports_10("setPixelNormI", setPixelNormI);
+    exports_11("setPixelNormI", setPixelNormI);
     function setPixelXY(imageData, x, y, r, g, b, a = 255) {
         setPixelI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_10("setPixelXY", setPixelXY);
+    exports_11("setPixelXY", setPixelXY);
     function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
         setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_10("setPixelNormXY", setPixelNormXY);
+    exports_11("setPixelNormXY", setPixelNormXY);
     return {
         setters: [],
         execute: function () {

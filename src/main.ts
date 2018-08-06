@@ -4,41 +4,40 @@ import { BoardView } from "./BoardView";
 
 import * as PIXI from "pixi.js";
 import { BulbController, BulbView } from "./Bulb";
-
-
+import { bii } from "./Bi";
 
 let mousePressed = false;
 
 const bicolors = [{
-    leftColor: "red",
-    rightColor: "red",
+    left: "red",
+    right: "red",
 }, {
-    leftColor: "red",
-    rightColor: "red",
+    left: "red",
+    right: "red",
 }, {
-    leftColor: "blue",
-    rightColor: "blue",
+    left: "blue",
+    right: "blue",
 }, {
-    leftColor: "blue",
-    rightColor: "blue",
+    left: "blue",
+    right: "blue",
 }, {
-    leftColor: "green",
-    rightColor: "green",
+    left: "green",
+    right: "green",
 }, {
-    leftColor: "green",
-    rightColor: "green",
+    left: "green",
+    right: "green",
 }, {
-    leftColor: "yellow",
-    rightColor: "yellow",
+    left: "yellow",
+    right: "yellow",
 }, {
-    leftColor: "yellow",
-    rightColor: "yellow",
+    left: "yellow",
+    right: "yellow",
 }, {
-    leftColor: "green",
-    rightColor: "red",
+    left: "green",
+    right: "red",
 }, {
-    leftColor: "red",
-    rightColor: "green",
+    left: "red",
+    right: "green",
 }];
 
 const boardModel = generateBoard(10, 10, bicolors);
@@ -57,15 +56,19 @@ const app = new PIXI.Application({
     height: canvas.height,
     forceCanvas: true, // todo remove
 });
-const leftContainer = new PIXI.Container();
-leftContainer.x = width / 2;
-leftContainer.y = height / 2;
-app.stage.addChild(leftContainer);
 
-const rightContainer = new PIXI.Container();
-rightContainer.x = width + width / 2;
-rightContainer.y = height / 2;
-app.stage.addChild(rightContainer);
+const container = {
+    left: new PIXI.Container(),
+    right: new PIXI.Container(),
+};
+
+container.left.x = width / 2;
+container.left.y = height / 2;
+app.stage.addChild(container.left);
+
+container.right.x = width + width / 2;
+container.right.y = height / 2;
+app.stage.addChild(container.right);
 
 BulbView.loadResources(app.renderer);
 
@@ -73,15 +76,15 @@ for (const row of boardModel.cells) {
     for (const bulb of row) {
         if (bulb.bulb) {
             // tslint:disable-next-line:no-unused-expression
-            new BulbController(bulb.bulb, leftContainer, rightContainer);
+            new BulbController(bulb.bulb, container);
         }
     }
 }
 
-leftContainer.pivot.x = leftContainer.width / 2;
-leftContainer.pivot.y = leftContainer.height / 2;
-rightContainer.pivot.x = rightContainer.width / 2;
-rightContainer.pivot.y = rightContainer.height / 2;
+for (const monoContainer of bii(container)) {
+    monoContainer.pivot.x = monoContainer.width / 2;
+    monoContainer.pivot.y = monoContainer.height / 2;
+}
 
 const boardController = new BoardController(boardModel);
 

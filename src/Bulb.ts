@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import { Bicolor } from "./Bicolor";
+import { Bi, bii } from "./Bi";
 
 export interface BulbModel {
     color: Bicolor;
@@ -26,29 +27,24 @@ export class BulbController {
         };
     }
 
-    public leftView: BulbView;
-    public rightView: BulbView;
+    public view: Bi<BulbView>;
     constructor(
         public model: BulbModel,
-        leftContainer: PIXI.Container,
-        rightContainer: PIXI.Container,
+        container: Bi<PIXI.Container>,
     ) {
-        this.leftView = new BulbView(
-            this.model,
-            true,
-            leftContainer,
-        );
-        this.rightView = new BulbView(
-            this.model,
-            false,
-            rightContainer,
-        );
+        this.view = {
+            left: new BulbView(this.model, true),
+            right: new BulbView(this.model, false),
+        };
+        container.left.addChild(this.view.left);
+        container.right.addChild(this.view.right);
     }
 
     sync() {
         if (this.model.isDisappearing) {
-            this.leftView.remove();
-            this.rightView.remove();
+            for (const monoView of bii(this.view)) {
+                monoView.removeSelf();
+            }
         }
 
         this.model.isFalling = false;
@@ -66,7 +62,7 @@ export class BulbController {
     }
 }
 
-export class BulbView {
+export class BulbView extends PIXI.Sprite {
     static radius = 10;
 
     static resources: { [id: string]: PIXI.Texture };
@@ -88,24 +84,21 @@ export class BulbView {
         };
     }
 
-    getColor() {
-        return this.isLeft ? this.model.color.leftColor : this.model.color.rightColor;
-    }
-
-    sprite: PIXI.Sprite;
-
     constructor(
         public model: BulbModel,
         public isLeft: boolean,
-        container: PIXI.Container,
     ) {
-        this.sprite = new PIXI.Sprite(BulbView.resources[this.getColor()]);
-        this.sprite.x = this.model.position.column * BulbView.radius * 2;
-        this.sprite.y = this.model.position.row * BulbView.radius * 2;
-        container.addChild(this.sprite);
+        super(BulbView.resources[isLeft ? model.color.left : model.color.right]);
     }
 
-    remove() {
-        this.sprite.parent.removeChild(this.sprite);
+    removeSelf() {
+        this.parent.removeChild(this);
+    }
+
+    updateTransform() {
+        this.x = this.model.position.column * BulbView.radius * 2;
+        this.y = this.model.position.row * BulbView.radius * 2;
+
+        super.updateTransform();
     }
 }

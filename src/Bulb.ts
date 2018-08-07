@@ -4,26 +4,16 @@ import { Bi, bii } from "./Bi";
 
 export interface BulbModel {
     color: Bicolor;
-    position: {
-        row: number;
-        column: number;
-    };
-    isFalling: boolean;
-    isAppearing: boolean;
-    isDisappearing: boolean;
+    row: number;
+    column: number;
 }
 
 export class BulbController {
     static createModel(color: Bicolor, column: number) {
         return {
             color,
-            position: {
-                row: 0,
-                column,
-            },
-            isFalling: false,
-            isAppearing: true,
-            isDisappearing: false,
+            row: 0,
+            column,
         };
     }
 
@@ -40,25 +30,14 @@ export class BulbController {
         container.right.addChild(this.view.right);
     }
 
-    sync() {
-        if (this.model.isDisappearing) {
-            for (const monoView of bii(this.view)) {
-                monoView.removeSelf();
-            }
-        }
-
-        this.model.isFalling = false;
-        this.model.isAppearing = false;
-        this.model.isDisappearing = false;
-    }
-
     fall() {
-        this.model.position.row++;
-        this.model.isFalling = true;
+        this.model.row++;
     }
 
     disappear() {
-        this.model.isDisappearing = true;
+        for (const monoView of bii(this.view)) {
+            monoView.removeSelf();
+        }
     }
 }
 
@@ -80,7 +59,7 @@ export class BulbView extends PIXI.Sprite {
             red: generateBulbTexture(0xFF0000),
             green: generateBulbTexture(0x00FF00),
             blue: generateBulbTexture(0x0000FF),
-            yelllow: generateBulbTexture(0xFFFF00),
+            yellow: generateBulbTexture(0xFFFF00),
         };
     }
 
@@ -96,8 +75,8 @@ export class BulbView extends PIXI.Sprite {
     }
 
     updateTransform() {
-        this.x = this.model.position.column * BulbView.radius * 2;
-        this.y = this.model.position.row * BulbView.radius * 2;
+        this.x = this.model.column * BulbView.radius * 2;
+        this.y = this.model.row * BulbView.radius * 2;
 
         super.updateTransform();
     }

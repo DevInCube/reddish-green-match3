@@ -72,29 +72,15 @@ app.stage.addChild(container.right);
 
 BulbView.loadResources(app.renderer);
 
-for (const row of boardModel.cells) {
-    for (const bulb of row) {
-        if (bulb.bulb) {
-            // tslint:disable-next-line:no-unused-expression
-            new BulbController(bulb.bulb, container);
-        }
-    }
-}
+const boardController = new BoardController(boardModel, container);
 
 for (const monoContainer of bii(container)) {
     monoContainer.pivot.x = monoContainer.width / 2;
     monoContainer.pivot.y = monoContainer.height / 2;
 }
 
-const boardController = new BoardController(boardModel);
-
 const leftBoardView = new BoardView(ctx, false, 0, 0, boardController.model);
 const rightBoardView = new BoardView(ctx, true, width, 0, boardController.model);
-
-function render() {
-    leftBoardView.render();
-    rightBoardView.render();
-}
 
 function shakeUntil() {
     while (true) {
@@ -109,7 +95,6 @@ function shakeUntil() {
 }
 
 shakeUntil();
-render();
 
 let mdX = 0;
 let mdY = 0;
@@ -150,7 +135,6 @@ canvas.addEventListener("mouseup", e => {
         } else {
             shakeUntil();
         }
-        render();
     }
 
     mousePressed = false;

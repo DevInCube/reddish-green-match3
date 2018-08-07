@@ -20,3 +20,5 @@ export function adjust<T>(
 export function getRandomElement<T>(array: T[]): T {
     return array[Math.floor(Math.random() * array.length)];
 }
+
+export type Nullable<T> = T | null;

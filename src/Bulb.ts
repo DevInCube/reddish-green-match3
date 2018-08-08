@@ -8,7 +8,7 @@ export interface BulbModel {
     column: number;
 }
 
-export class BulbController {
+export class BulbController extends PIXI.utils.EventEmitter {
     static createModel(color: Bicolor, column: number) {
         return {
             color,
@@ -22,12 +22,23 @@ export class BulbController {
         public model: BulbModel,
         container: Bi<PIXI.Container>,
     ) {
+        super();
+
         this.view = {
             left: new BulbView(this.model, true),
             right: new BulbView(this.model, false),
         };
         container.left.addChild(this.view.left);
         container.right.addChild(this.view.right);
+
+        for (const monoView of bii(this.view)) {
+            monoView.on("pointerdown", () => {
+                this.emit("startswap", this);
+            });
+            monoView.on("pointerup", () => {
+                this.emit("endswap", this);
+            });
+        }
     }
 
     fall() {
@@ -42,7 +53,7 @@ export class BulbController {
 }
 
 export class BulbView extends PIXI.Sprite {
-    static radius = 10;
+    static radius = 20;
 
     static resources: { [id: string]: PIXI.Texture };
 
@@ -68,6 +79,7 @@ export class BulbView extends PIXI.Sprite {
         public isLeft: boolean,
     ) {
         super(BulbView.resources[isLeft ? model.color.left : model.color.right]);
+        this.interactive = true;
     }
 
     removeSelf() {

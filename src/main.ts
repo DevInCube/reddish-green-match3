@@ -1,12 +1,9 @@
 import { generateBoard } from "./generateBoard";
 import { BoardController, CellCoords } from "./BoardController";
-import { BoardView } from "./BoardView";
 
 import * as PIXI from "pixi.js";
-import { BulbController, BulbView } from "./Bulb";
 import { bii } from "./Bi";
-
-let mousePressed = false;
+import { BulbView } from "./Bulb";
 
 const bicolors = [{
     left: "red",
@@ -45,17 +42,15 @@ const boardModel = generateBoard(10, 10, bicolors);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
-const ctx = canvas.getContext("2d")!;
-
-const height = canvas.height;
-const width = canvas.width / 2;
 
 const app = new PIXI.Application({
     view: canvas,
     width: canvas.width,
     height: canvas.height,
-    forceCanvas: true, // todo remove
 });
+
+const height = app.renderer.height;
+const width = app.renderer.width / 2;
 
 const container = {
     left: new PIXI.Container(),
@@ -79,63 +74,4 @@ for (const monoContainer of bii(container)) {
     monoContainer.pivot.y = monoContainer.height / 2;
 }
 
-const leftBoardView = new BoardView(ctx, false, 0, 0, boardController.model);
-const rightBoardView = new BoardView(ctx, true, width, 0, boardController.model);
-
-function shakeUntil() {
-    while (true) {
-        while (boardController.shake()) {
-            //
-        }
-        while (boardController.findChunks()) {
-            //
-        }
-        if (boardController.shake() === 0) { break; }
-    }
-}
-
-shakeUntil();
-
-let mdX = 0;
-let mdY = 0;
-canvas.addEventListener("mousedown", e => {
-
-    const x = e.offsetX;
-    const y = e.offsetY;
-
-    mdX = x;
-    mdY = y;
-});
-
-canvas.addEventListener("mousemove", e => {
-    if (mousePressed) {
-        //
-    }
-});
-
-canvas.addEventListener("mouseup", e => {
-    const x = e.offsetX;
-    const y = e.offsetY;
-
-    const mdCellCoords = leftBoardView.findCellCoords(mdX, mdY) || rightBoardView.findCellCoords(mdX, mdY);
-    const muCellCoords = leftBoardView.findCellCoords(x, y) || rightBoardView.findCellCoords(x, y);
-    if (mdCellCoords && muCellCoords) {
-        const dx = muCellCoords.column - mdCellCoords.column;
-        const dy = muCellCoords.row - mdCellCoords.row;
-        const newCoords = new CellCoords(mdCellCoords.row, mdCellCoords.column);
-        if (Math.abs(dx) > Math.abs(dy)) {
-            newCoords.column += Math.sign(dx);
-        } else {
-            newCoords.row += Math.sign(dy);
-        }
-        boardController.moveCell(mdCellCoords, newCoords);
-
-        if (!boardController.findChunks()) {
-            boardController.moveCell(newCoords, mdCellCoords);
-        } else {
-            shakeUntil();
-        }
-    }
-
-    mousePressed = false;
-});
+boardController.run();

@@ -36,9 +36,28 @@ export class BoardController {
         this.bulbs = [];
         for (const bulb of this.model.bulbs) {
             if (bulb) {
-                this.bulbs.push(new BulbController(bulb, container));
+                this.addBulbController(new BulbController(bulb, container));
             }
         }
+    }
+
+    startSwapBulb?: BulbController = undefined;
+
+    addBulbController(bulb: BulbController) {
+        this.bulbs.push(bulb);
+        bulb.on("startswap", () => this.startSwapBulb = bulb);
+        bulb.on("endswap", () => {
+            if (this.startSwapBulb) {
+                this.swap(this.startSwapBulb, bulb);
+                this.startSwapBulb = undefined;
+            }
+        });
+    }
+
+    removeBulbController(bulb: BulbController) {
+        this.bulbs.splice(this.bulbs.indexOf(bulb, 1));
+        bulb.off("startswap");
+        bulb.off("endswap");
     }
 
     _buildGrid(): Array<Array<Nullable<BulbController>>> {
@@ -70,7 +89,7 @@ export class BoardController {
                         for (let jj = startJ; jj < startJ + chunkLen; jj++) {
                             grid[jj][i]!.disappear();
                             this.model.bulbs.splice(this.model.bulbs.indexOf(grid[jj][i]!.model), 1);
-                            this.bulbs.splice(this.bulbs.indexOf(grid[jj][i]!), 1);
+                            this.removeBulbController(grid[jj][i]!);
                             grid[jj][i] = null;
                         }
                         counter += 1;
@@ -90,7 +109,7 @@ export class BoardController {
                         for (let ii = startI; ii < startI + chunkLen; ii++) {
                             grid[j][ii]!.disappear();
                             this.model.bulbs.splice(this.model.bulbs.indexOf(grid[j][ii]!.model), 1);
-                            this.bulbs.splice(this.bulbs.indexOf(grid[j][ii]!), 1);
+                            this.removeBulbController(grid[j][ii]!);
                             grid[j][ii] = null;
                         }
                         counter += 1;
@@ -102,30 +121,50 @@ export class BoardController {
         return counter;
     }
 
-    areCoordsValid(c: CellCoords) {
-        return c.row >= 0
-            && c.row < this.model.rowCount
-            && c.column >= 0
-            && c.column < this.model.columnCount;
+    swap(bulb1: BulbController, bulb2: BulbController) {
+        const dRow = (bulb1.model.row - bulb2.model.row);
+        const dColumn = (bulb1.model.column - bulb2.model.column);
+        const dSqr = dRow * dRow + dColumn * dColumn;
+
+        if (dSqr !== 1) {
+            return;
+        }
+
+        {
+            const tmpRow = bulb2.model.row;
+            const tmpColumn = bulb2.model.column;
+            bulb2.model.row = bulb1.model.row;
+            bulb2.model.column = bulb1.model.column;
+            bulb1.model.row = tmpRow;
+            bulb1.model.column = tmpColumn;
+        }
+
+        const chunksCount = this.run();
+
+        if (chunksCount === 0) {
+            {
+                const tmpRow = bulb2.model.row;
+                const tmpColumn = bulb2.model.column;
+                bulb2.model.row = bulb1.model.row;
+                bulb2.model.column = bulb1.model.column;
+                bulb1.model.row = tmpRow;
+                bulb1.model.column = tmpColumn;
+            }
+        }
     }
 
-    moveCell(coords: CellCoords, newCoords: CellCoords) {
-        throw new Error("Not implemented");
-        // if (this.areCoordsValid(newCoords)) {
-        //     const tmp = this.model.cells[coords.row][coords.column];
+    run() {
+        const chunksCount = this.findChunks();
 
-        //     this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
-        //     if (this.model.cells[coords.row][coords.column].bulb) {
-        //         this.model.cells[coords.row][coords.column].bulb!.position.row = coords.row;
-        //         this.model.cells[coords.row][coords.column].bulb!.position.column = coords.column;
-        //     }
+        while (true) {
+            while (this.shake() > 0) {
+                //
+            }
 
-        //     this.model.cells[newCoords.row][newCoords.column] = tmp;
-        //     if (this.model.cells[newCoords.row][newCoords.column].bulb) {
-        //         this.model.cells[newCoords.row][newCoords.column].bulb!.position.row = newCoords.row;
-        //         this.model.cells[newCoords.row][newCoords.column].bulb!.position.column = newCoords.column;
-        //     }
-        // }
+            if (this.findChunks() === 0) {
+                return chunksCount;
+            }
+        }
     }
 
     shake() {
@@ -138,7 +177,7 @@ export class BoardController {
                     const newBulb = new BulbController(
                         BulbController.createModel(getRandomElement(this.model.bicolors), column),
                         this.container);
-                    this.bulbs.push(newBulb);
+                    this.addBulbController(newBulb);
                     this.model.bulbs.push(newBulb.model);
                     grid[column][row] = newBulb;
                     counter += 1;
@@ -152,7 +191,7 @@ export class BoardController {
                         const newBulb = new BulbController(
                             BulbController.createModel(getRandomElement(this.model.bicolors), column),
                             this.container);
-                        this.bulbs.push(newBulb);
+                        this.addBulbController(newBulb);
                         this.model.bulbs.push(newBulb.model);
                         grid[column][row - 1] = newBulb;
                     }

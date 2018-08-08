@@ -60,8 +60,9 @@ System.register("Bulb", ["pixi.js", "Bi"], function (exports_4, context_4) {
             }
         ],
         execute: function () {
-            BulbController = class BulbController {
+            BulbController = class BulbController extends PIXI.utils.EventEmitter {
                 constructor(model, container) {
+                    super();
                     this.model = model;
                     this.view = {
                         left: new BulbView(this.model, true),
@@ -69,6 +70,14 @@ System.register("Bulb", ["pixi.js", "Bi"], function (exports_4, context_4) {
                     };
                     container.left.addChild(this.view.left);
                     container.right.addChild(this.view.right);
+                    for (const monoView of Bi_1.bii(this.view)) {
+                        monoView.on("pointerdown", () => {
+                            this.emit("startswap", this);
+                        });
+                        monoView.on("pointerup", () => {
+                            this.emit("endswap", this);
+                        });
+                    }
                 }
                 static createModel(color, column) {
                     return {
@@ -92,6 +101,7 @@ System.register("Bulb", ["pixi.js", "Bi"], function (exports_4, context_4) {
                     super(BulbView.resources[isLeft ? model.color.left : model.color.right]);
                     this.model = model;
                     this.isLeft = isLeft;
+                    this.interactive = true;
                 }
                 static loadResources(renderer) {
                     function generateBulbTexture(color) {
@@ -117,7 +127,7 @@ System.register("Bulb", ["pixi.js", "Bi"], function (exports_4, context_4) {
                     super.updateTransform();
                 }
             };
-            BulbView.radius = 10;
+            BulbView.radius = 20;
             exports_4("BulbView", BulbView);
         }
     };
@@ -150,12 +160,28 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
                 constructor(model, container) {
                     this.model = model;
                     this.container = container;
+                    this.startSwapBulb = undefined;
                     this.bulbs = [];
                     for (const bulb of this.model.bulbs) {
                         if (bulb) {
-                            this.bulbs.push(new Bulb_1.BulbController(bulb, container));
+                            this.addBulbController(new Bulb_1.BulbController(bulb, container));
                         }
                     }
+                }
+                addBulbController(bulb) {
+                    this.bulbs.push(bulb);
+                    bulb.on("startswap", () => this.startSwapBulb = bulb);
+                    bulb.on("endswap", () => {
+                        if (this.startSwapBulb) {
+                            this.swap(this.startSwapBulb, bulb);
+                            this.startSwapBulb = undefined;
+                        }
+                    });
+                }
+                removeBulbController(bulb) {
+                    this.bulbs.splice(this.bulbs.indexOf(bulb, 1));
+                    bulb.off("startswap");
+                    bulb.off("endswap");
                 }
                 _buildGrid() {
                     const grid = Array.from({ length: this.model.columnCount }, () => Array.from({ length: this.model.rowCount }, () => null));
@@ -178,7 +204,7 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
                                     for (let jj = startJ; jj < startJ + chunkLen; jj++) {
                                         grid[jj][i].disappear();
                                         this.model.bulbs.splice(this.model.bulbs.indexOf(grid[jj][i].model), 1);
-                                        this.bulbs.splice(this.bulbs.indexOf(grid[jj][i]), 1);
+                                        this.removeBulbController(grid[jj][i]);
                                         grid[jj][i] = null;
                                     }
                                     counter += 1;
@@ -198,7 +224,7 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
                                     for (let ii = startI; ii < startI + chunkLen; ii++) {
                                         grid[j][ii].disappear();
                                         this.model.bulbs.splice(this.model.bulbs.indexOf(grid[j][ii].model), 1);
-                                        this.bulbs.splice(this.bulbs.indexOf(grid[j][ii]), 1);
+                                        this.removeBulbController(grid[j][ii]);
                                         grid[j][ii] = null;
                                     }
                                     counter += 1;
@@ -209,27 +235,43 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
                     }
                     return counter;
                 }
-                areCoordsValid(c) {
-                    return c.row >= 0
-                        && c.row < this.model.rowCount
-                        && c.column >= 0
-                        && c.column < this.model.columnCount;
+                swap(bulb1, bulb2) {
+                    const dRow = (bulb1.model.row - bulb2.model.row);
+                    const dColumn = (bulb1.model.column - bulb2.model.column);
+                    const dSqr = dRow * dRow + dColumn * dColumn;
+                    if (dSqr !== 1) {
+                        return;
+                    }
+                    {
+                        const tmpRow = bulb2.model.row;
+                        const tmpColumn = bulb2.model.column;
+                        bulb2.model.row = bulb1.model.row;
+                        bulb2.model.column = bulb1.model.column;
+                        bulb1.model.row = tmpRow;
+                        bulb1.model.column = tmpColumn;
+                    }
+                    const chunksCount = this.run();
+                    if (chunksCount === 0) {
+                        {
+                            const tmpRow = bulb2.model.row;
+                            const tmpColumn = bulb2.model.column;
+                            bulb2.model.row = bulb1.model.row;
+                            bulb2.model.column = bulb1.model.column;
+                            bulb1.model.row = tmpRow;
+                            bulb1.model.column = tmpColumn;
+                        }
+                    }
                 }
-                moveCell(coords, newCoords) {
-                    throw new Error("Not implemented");
-                    // if (this.areCoordsValid(newCoords)) {
-                    //     const tmp = this.model.cells[coords.row][coords.column];
-                    //     this.model.cells[coords.row][coords.column] = this.model.cells[newCoords.row][newCoords.column];
-                    //     if (this.model.cells[coords.row][coords.column].bulb) {
-                    //         this.model.cells[coords.row][coords.column].bulb!.position.row = coords.row;
-                    //         this.model.cells[coords.row][coords.column].bulb!.position.column = coords.column;
-                    //     }
-                    //     this.model.cells[newCoords.row][newCoords.column] = tmp;
-                    //     if (this.model.cells[newCoords.row][newCoords.column].bulb) {
-                    //         this.model.cells[newCoords.row][newCoords.column].bulb!.position.row = newCoords.row;
-                    //         this.model.cells[newCoords.row][newCoords.column].bulb!.position.column = newCoords.column;
-                    //     }
-                    // }
+                run() {
+                    const chunksCount = this.findChunks();
+                    while (true) {
+                        while (this.shake() > 0) {
+                            //
+                        }
+                        if (this.findChunks() === 0) {
+                            return chunksCount;
+                        }
+                    }
                 }
                 shake() {
                     const grid = this._buildGrid();
@@ -238,7 +280,7 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
                         for (let row = this.model.rowCount - 1; row >= 0; row--) {
                             if (row === 0 && !grid[column][row]) {
                                 const newBulb = new Bulb_1.BulbController(Bulb_1.BulbController.createModel(misc_1.getRandomElement(this.model.bicolors), column), this.container);
-                                this.bulbs.push(newBulb);
+                                this.addBulbController(newBulb);
                                 this.model.bulbs.push(newBulb.model);
                                 grid[column][row] = newBulb;
                                 counter += 1;
@@ -250,7 +292,7 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
                                 }
                                 if (row - 1 === 0 && !grid[column][row - 1]) {
                                     const newBulb = new Bulb_1.BulbController(Bulb_1.BulbController.createModel(misc_1.getRandomElement(this.model.bicolors), column), this.container);
-                                    this.bulbs.push(newBulb);
+                                    this.addBulbController(newBulb);
                                     this.model.bulbs.push(newBulb.model);
                                     grid[column][row - 1] = newBulb;
                                 }
@@ -265,44 +307,9 @@ System.register("BoardController", ["utils/misc", "Bulb"], function (exports_5, 
         }
     };
 });
-System.register("BoardView", ["BoardController"], function (exports_6, context_6) {
-    var BoardController_1, BoardView;
-    var __moduleName = context_6 && context_6.id;
-    return {
-        setters: [
-            function (BoardController_1_1) {
-                BoardController_1 = BoardController_1_1;
-            }
-        ],
-        execute: function () {
-            BoardView = class BoardView {
-                constructor(context, isRight, x, y, model) {
-                    this.context = context;
-                    this.isRight = isRight;
-                    this.x = x;
-                    this.y = y;
-                    this.model = model;
-                }
-                findCellCoords(x, y) {
-                    if (x >= this.x && x <= this.x + BoardView.CELL_SIZE * this.model.columnCount
-                        && y >= this.y && y <= this.y + BoardView.CELL_SIZE * this.model.rowCount) {
-                        x -= this.x;
-                        y -= this.y;
-                        const i = Math.trunc(y / BoardView.CELL_SIZE);
-                        const j = Math.trunc(x / BoardView.CELL_SIZE);
-                        return new BoardController_1.CellCoords(i, j);
-                    }
-                    return undefined;
-                }
-            };
-            BoardView.CELL_SIZE = 32;
-            exports_6("BoardView", BoardView);
-        }
-    };
-});
-System.register("generateBoard", ["utils/misc"], function (exports_7, context_7) {
+System.register("generateBoard", ["utils/misc"], function (exports_6, context_6) {
     var misc_2;
-    var __moduleName = context_7 && context_7.id;
+    var __moduleName = context_6 && context_6.id;
     function generateBoard(rowCount, columnCount, bicolors) {
         const bulbs = [];
         for (let column = 0; column < columnCount; column++) {
@@ -321,7 +328,7 @@ System.register("generateBoard", ["utils/misc"], function (exports_7, context_7)
             bicolors,
         };
     }
-    exports_7("generateBoard", generateBoard);
+    exports_6("generateBoard", generateBoard);
     return {
         setters: [
             function (misc_2_1) {
@@ -332,45 +339,28 @@ System.register("generateBoard", ["utils/misc"], function (exports_7, context_7)
         }
     };
 });
-System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.js", "Bulb", "Bi"], function (exports_8, context_8) {
-    var generateBoard_1, BoardController_2, BoardView_1, PIXI, Bulb_2, Bi_2, mousePressed, bicolors, boardModel, canvas, ctx, height, width, app, container, boardController, leftBoardView, rightBoardView, mdX, mdY;
-    var __moduleName = context_8 && context_8.id;
-    function shakeUntil() {
-        while (true) {
-            while (boardController.shake()) {
-                //
-            }
-            while (boardController.findChunks()) {
-                //
-            }
-            if (boardController.shake() === 0) {
-                break;
-            }
-        }
-    }
+System.register("main", ["generateBoard", "BoardController", "pixi.js", "Bi", "Bulb"], function (exports_7, context_7) {
+    var generateBoard_1, BoardController_1, PIXI, Bi_2, Bulb_2, bicolors, boardModel, canvas, app, height, width, container, boardController;
+    var __moduleName = context_7 && context_7.id;
     return {
         setters: [
             function (generateBoard_1_1) {
                 generateBoard_1 = generateBoard_1_1;
             },
-            function (BoardController_2_1) {
-                BoardController_2 = BoardController_2_1;
-            },
-            function (BoardView_1_1) {
-                BoardView_1 = BoardView_1_1;
+            function (BoardController_1_1) {
+                BoardController_1 = BoardController_1_1;
             },
             function (PIXI_2) {
                 PIXI = PIXI_2;
             },
-            function (Bulb_2_1) {
-                Bulb_2 = Bulb_2_1;
-            },
             function (Bi_2_1) {
                 Bi_2 = Bi_2_1;
+            },
+            function (Bulb_2_1) {
+                Bulb_2 = Bulb_2_1;
             }
         ],
         execute: function () {
-            mousePressed = false;
             bicolors = [{
                     left: "red",
                     right: "red",
@@ -406,15 +396,13 @@ System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.
             canvas = document.getElementById("canvas");
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
-            ctx = canvas.getContext("2d");
-            height = canvas.height;
-            width = canvas.width / 2;
             app = new PIXI.Application({
                 view: canvas,
                 width: canvas.width,
                 height: canvas.height,
-                forceCanvas: true,
             });
+            height = app.renderer.height;
+            width = app.renderer.width / 2;
             container = {
                 left: new PIXI.Container(),
                 right: new PIXI.Container(),
@@ -426,67 +414,19 @@ System.register("main", ["generateBoard", "BoardController", "BoardView", "pixi.
             container.right.y = height / 2;
             app.stage.addChild(container.right);
             Bulb_2.BulbView.loadResources(app.renderer);
-            boardController = new BoardController_2.BoardController(boardModel, container);
+            boardController = new BoardController_1.BoardController(boardModel, container);
             for (const monoContainer of Bi_2.bii(container)) {
                 monoContainer.pivot.x = monoContainer.width / 2;
                 monoContainer.pivot.y = monoContainer.height / 2;
             }
-            leftBoardView = new BoardView_1.BoardView(ctx, false, 0, 0, boardController.model);
-            rightBoardView = new BoardView_1.BoardView(ctx, true, width, 0, boardController.model);
-            shakeUntil();
-            mdX = 0;
-            mdY = 0;
-            canvas.addEventListener("mousedown", e => {
-                const x = e.offsetX;
-                const y = e.offsetY;
-                mdX = x;
-                mdY = y;
-            });
-            canvas.addEventListener("mousemove", e => {
-                if (mousePressed) {
-                    //
-                }
-            });
-            canvas.addEventListener("mouseup", e => {
-                const x = e.offsetX;
-                const y = e.offsetY;
-                const mdCellCoords = leftBoardView.findCellCoords(mdX, mdY) || rightBoardView.findCellCoords(mdX, mdY);
-                const muCellCoords = leftBoardView.findCellCoords(x, y) || rightBoardView.findCellCoords(x, y);
-                if (mdCellCoords && muCellCoords) {
-                    const dx = muCellCoords.column - mdCellCoords.column;
-                    const dy = muCellCoords.row - mdCellCoords.row;
-                    const newCoords = new BoardController_2.CellCoords(mdCellCoords.row, mdCellCoords.column);
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        newCoords.column += Math.sign(dx);
-                    }
-                    else {
-                        newCoords.row += Math.sign(dy);
-                    }
-                    boardController.moveCell(mdCellCoords, newCoords);
-                    if (!boardController.findChunks()) {
-                        boardController.moveCell(newCoords, mdCellCoords);
-                    }
-                    else {
-                        shakeUntil();
-                    }
-                }
-                mousePressed = false;
-            });
-        }
-    };
-});
-System.register("model", [], function (exports_9, context_9) {
-    var __moduleName = context_9 && context_9.id;
-    return {
-        setters: [],
-        execute: function () {
+            boardController.run();
         }
     };
 });
 // https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-System.register("utils/Random", [], function (exports_10, context_10) {
+System.register("utils/Random", [], function (exports_8, context_8) {
     var MAX_INT32, MINSTD, Random;
-    var __moduleName = context_10 && context_10.id;
+    var __moduleName = context_8 && context_8.id;
     return {
         setters: [],
         execute: function () {// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
@@ -509,13 +449,13 @@ System.register("utils/Random", [], function (exports_10, context_10) {
                     return (this.next() - 1) / (MAX_INT32 - 1);
                 }
             };
-            exports_10("Random", Random);
+            exports_8("Random", Random);
         }
     };
 });
-System.register("utils/imageData", [], function (exports_11, context_11) {
+System.register("utils/imageData", [], function (exports_9, context_9) {
     var almost256;
-    var __moduleName = context_11 && context_11.id;
+    var __moduleName = context_9 && context_9.id;
     function setPixelI(imageData, i, r, g, b, a = 1) {
         // tslint:disable-next-line:no-bitwise
         const offset = i << 2;
@@ -524,22 +464,22 @@ System.register("utils/imageData", [], function (exports_11, context_11) {
         imageData.data[offset + 2] = b;
         imageData.data[offset + 3] = a;
     }
-    exports_11("setPixelI", setPixelI);
+    exports_9("setPixelI", setPixelI);
     function scaleNorm(v) {
         return Math.floor(v * almost256);
     }
     function setPixelNormI(imageData, i, r, g, b, a = 1) {
         setPixelI(imageData, i, scaleNorm(r), scaleNorm(g), scaleNorm(b), scaleNorm(a));
     }
-    exports_11("setPixelNormI", setPixelNormI);
+    exports_9("setPixelNormI", setPixelNormI);
     function setPixelXY(imageData, x, y, r, g, b, a = 255) {
         setPixelI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_11("setPixelXY", setPixelXY);
+    exports_9("setPixelXY", setPixelXY);
     function setPixelNormXY(imageData, x, y, r, g, b, a = 1) {
         setPixelNormI(imageData, y * imageData.width + x, r, g, b, a);
     }
-    exports_11("setPixelNormXY", setPixelNormXY);
+    exports_9("setPixelNormXY", setPixelNormXY);
     return {
         setters: [],
         execute: function () {

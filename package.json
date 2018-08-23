@@ -5,7 +5,11 @@
     "start": "http-server . -p 45892 -o http://127.0.0.1:45892/public/ -c-1"
   },
   "devDependencies": {
-    "http-server": "^0.10.0"
+    "http-server": "^0.10.0",
+    "typescript": "^3.0.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/pixi.js": "^4.8.0",
+    "pixi.js": "^4.8.1"
+  }
 }

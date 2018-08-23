@@ -2,6 +2,6 @@
 
 ```
 npm i
-tsc
+npm run cbuild
 npm start
 ```
